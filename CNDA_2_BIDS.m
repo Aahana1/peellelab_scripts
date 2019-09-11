@@ -51,6 +51,12 @@ aap.options.autoidentifyt2_chooselast = 0;
 % ------------------------------------------------------------------------------------------------------------------------------
 % add subjects and sessions -- demonstrating one subject, 2 sessions
 % ------------------------------------------------------------------------------------------------------------------------------
+% Nomenclature for scan sequences: 'functional','diffusion','fieldmaps','specialseries'
+% Check aas_addsubject for more info
+% 'diffusion' also needs one aas_addsession; In Peellelab data, 3 sessions were collected for diffusion scans, which get combined into 1 with the BIDs export
+
+% If you'd like to replace the Peellelab number with something non-discrete to upload to OpenNeuro
+% aap = aas_addsubject(aap, 'sub_01', 'PL00026_02', 'functional',[ 18 20 ]); 
 
 aap = aas_addsubject(aap, 'PL00026', 'PL00026_02', 'functional', [ 18 20 ]);
 

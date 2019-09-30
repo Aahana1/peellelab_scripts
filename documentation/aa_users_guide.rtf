@@ -1,0 +1,1859 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf400
+\cocoascreenfonts1{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fmodern\fcharset0 Courier;
+\f3\fswiss\fcharset0 Helvetica-Oblique;\f4\fswiss\fcharset0 Helvetica-BoldOblique;\f5\fmodern\fcharset0 Courier-Bold;
+\f6\fmodern\fcharset0 CourierNewPS-BoldMT;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww29860\viewh19580\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\f0\b\fs32 \cf0 Getting Started with Automatic Analysis\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+AutomaticAnalysis (aa) is a Matlab-based toolkit offering scripted access to MRI packages such as SPM, FSL, and FreeSurfer, as well as tools for PET, EEG, and MEG analysis. It not only allows a user to perform standard fMRI preprocessing and statistical modeling, but also implements a number of specialized techniques such as Dartel, MVPA, VBM, BIDS formatting, ROI creation, searchlight analysis, DTI analysis, and Louvain clustering, and provides an interface to popular third-party software such as GLMdenoise, Marsbar, MELODIC, Possum, ANTS, BrainWavelet, and LI.  Furthermore, aa allows you to implement your own custom algorithms, either by combining its existing functionality in novel ways or by integrating new code into the package. It assembles analysis graphical output into a stand-alone html document and provides options for multicore and cluster-based computing using the Matlab Parallel Computation Toolbox, qsub, or Condor. There is a small but active aa development community that is continually adding functionality and improving usability. \
+\
+That being said, aa has a rather steep learning curve. The documentation is limited, and much of the code is not thoroughly tested. Example analysis scripts included with the package are typically specialized for a particular institution or task and may not work elsewhere. Furthermore, these examples (and much aa code itself) contain little in the way of explanatory annotation. What is needed is an introduction sympathetic to the new user, one that explains how to implement  common processing tasks while describing aa syntax and potential pitfalls in detail. That is what this document is intended to provide.\
+\
+In this document, we introduce aa by showing how to use the package to implement a typical fMRI processing pipeline. This assumes familiarity with MRI preprocessing and modeling using the General Linear Model (GLM). The input files are assumed to be in DICOM format, although techniques for reading other file types (e.g., nifti) will be described. Some familiarity with SPM is assumed (the aa interface uses SPM terminology) as well as a bit of Unix. Additional information can be found at automaticanalysis.org.\
+\
+Additional samples of useful (and tested) aa code will be added to in this document in the future.\
+\
+
+\f0\b \
+0. Installing aa\
+\
+
+\f1\b0 To determine if aa is installed on your machine, type 
+\f2 which aa_init
+\f1  at the Matlab command line. If the command is not found, aa must be installed.\
+\
+Installation is straightforward: Download or (preferred) clone the aa "repository" from GitHub at  https://github.com/rhodricusack/automaticanalysis (see the lab's git guide for instructions on using git). This is a collection of Matlab mfiles and a few other standalone utilities. Put this folder somewhere sensible on your machine (/Applications, for example), then 
+\f2 addpath
+\f1  that location to your Matlab path. (You may want to install a Peelle-lab specific version of aa, which has custom extensions and more up-to-date bug fixes for OS X. The main repo lives at: 
+\f2 https://github.com/automaticanalysis/automaticanalysis. 
+\f1 This includes the most recent bugfixes and development and is probably the best repo to clone. Note some lab members maintain independent forks of the aa repo which might include specialized functionality used in the lab (ex: motion scrubbing). If you have questions about which repo to clone, speak to a senior lab member.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 Important
+\f1\i0 : Note when you clone a GitHub repo, you get all "branches" (versions) of the code in the repo (this typically inclues a stabler "master" version of the code, as well as one or more versions under active development). As a result of git magic, 
+\f3\i Matlab will use the code in the branch of the repo that is currently "checked out." 
+\f1\i0 This happens automatically -- you do not need to inform Matlab about git in any way. See the lab's git guide for more infomation.\
+\
+aa only runs under Linux and Mac OS X. It works best with a newer versions of Matlab (> R2016a). However, using the latest Matlab release (R2017a, as of this writing) is not recommended, as the package has not yet been tested in this environment.\
+\
+At minimum, aa requires SPM -- spm12 is currently the best option. Additionally, analysis reporting (described later) assumes FSL is installed.  Additional third-party packages (e.g., FreeSurfer, Marsbar, GLMdenoise) are not required unless you intend to use them (on start-up, aa will warn you of optional packages it can't find. You may ignore these messages).\
+\
+Take a moment to look through the files in the aa distribution. The following subdirectories are the most important:\
+\
+		aa_modules 					\'97a collection of analysis "modules" you select from to implement an analysis\
+		aa_engine					\'97 mostly aa internals, but also includes a utilities you may need \
+		aa_toolbox					\'97 aa-related functions, including reporting and a BIDS converter\
+		aa_testcode					\'97 script for testing GitHub pull requests\
+		aa_parametersets				\'97 sample parameter sets\
+		examples						\'97 sample scripts\
+		external						\'97 third-party software used by aa\
+		extrafunctions					\'97 standalone utilities used by aa\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+1. The Two Files of an aa Analysis\
+
+\f1\b0 \
+Two files are required to define an analysis in aa: 1) an xml list of the analysis tasks to be performed called the 
+\f3\i tasklist
+\f1\i0 , and 2) a Matlab mfile that provides parameter customization for the tasklist called the 
+\f3\i userscript
+\f1\i0 . \
+\
+The relationship of the tasklist and the userscript can be confusing, since content in one affects the other. For concreteness, we will implement a standard fMRI analysis pipeline as an example. This includes data input, realignment, coregistration, normalization, and finally the generation of a statistical parameter map using GLM.  We assume DICOM data (as would be downloaded from CNDA at WashU) consisting of a structural (i.e. T1) scan, and several functional (i.e. BOLD) scans.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 Note
+\f1\i0 : The example userscript and tasklist shown here assume the CNDA data format used internally by Peelle lab. Example code using the ANALYZE and BIDS formats may be found in the Appendices\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f4\i\b \cf0 Helpful hint: 
+\f0\i0 A difficulty of using aa is that its error messages are not particularly helpful. As such, it's helpful (especially for new aa users) to develop your analysis in small steps. Start with one subject, not all of them. Don't include modeling until the preprocessing is working. Test preprocessing one or a few stages at a time. After each step forward 
+\f4\i save a copy of your working tasklist and userscript. 
+\f0\i0 That way, if aa begins to crash, you can return to a saved working analysis and try again.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+
+\f0\b 1.1 The Tasklist\
+\
+
+\f1\b0 The aa tasklist uses (a small subset of) Extensible Markup Language (xml was chosen so that aa could make use of a third-party xml parser). The xml syntax is odd but not complicated. The primary features are the following:\
+\
+	1) each module to be included in the pipeline is identified with a 
+\f2 <module><name>
+\f1  tag, followed by the module name and then a pair of closing tags.\
+	2) the tasklist is divided into initialization and main sections.\
+	3) the entire tasklist is enclosed by (opening and closing) 
+\f2 <aap><tasklist>
+\f1  tag pair.\
+\
+The first line of the tasklist specifies the xml version and character encoding (see below). Comments may be included between 
+\f2 <!-- 
+\f1 and 
+\f2 --> 
+\f1 tokens. More information about xml can be found on line.\
+\
+The following example tasklist specifies a standard fMRI processing pipeline:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 <?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+\
+    <tasklist>\
+\
+        <initialisation>		\
+			<module><name>aamod_study_init</name></module>		 </initialisation>\
+		\
+        <main>\
+         \
+			<!-- data input -->\
+\
+           <module><name>aamod_autoidentifyseries_timtrio</name></module>\
+			<module><name>aamod_get_dicom_structural</name></module>            \
+			<module><name>aamod_convert_structural</name></module>\
+			<module><name>aamod_get_dicom_epi</name></module>\
+           <module><name>aamod_convert_epis</name></module>   \
+              \
+			<!-- preprocessing -->\
+ \
+           <module><name>aamod_realign</name></module>  \
+           <module><name>aamod_coreg_extended</name></module>\
+			<module><name>aamod_segment8_multichan</name></module>\
+           <module><name>aamod_norm_write</name></module>\
+           <module><name>aamod_smooth</name></module>\
+		     \
+			<!-- modeling -->\
+\
+			<module><name>aamod_firstlevel_model</name></module>                        \
+			<module><name>aamod_firstlevel_contrasts</name></module>\
+			<module><name>aamod_firstlevel_threshold</name></module>\
+		            \
+        </main>\
+\
+    </tasklist>\
+\
+</aap>
+\f2\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1 \cf0 \
+The tasklist is a list of aa analysis 
+\f3\i modules
+\f1\i0 . A module is a Matlab mfile that provides specific functionality. The modules listed in the tasklist will be executed, in order, for each subject defined in the study and for each session defined for a given subject (defining subject and sessions is done in the userscript, as will be described in the next section). Ideally (but not always), a module's function is obvious from its name. For example, 
+\f2 aamod_coreg_extended
+\f1  performs coregistration of the functional and structural images ("noss" stands for "no skull stripping").\
+ \
+The initialization section shown here suffices for most needs. There is a rudimentary initialization of the study and subject data structures. The bulk of the tasklist is defined in the main section. The first task is data input. Structural and functional files are assumed to be provided in DICOM format \'97 these are input and converted to Nifti. It is necessary to include the correct autoidentify module to inform aa of the type of scanner that was used to collect the data -- this is use to examine the file headers fields to identify the file type. The WashU Bay 3 scanner is a (Siemens) Timtrio \'97 autoidentify files are also defined for GE and generic Siemens scanners. See the various 
+\f2 aamod_autoidentify 
+\f1 modules in the distribution.\
+\
+The main section includes the preprocessing and modeling tasks.  The set shown here implements realignment (motion correction), coregistration of structural and functional scans, normalization and finally spatial smoothing of the functional data. After post-processing is complete, a first-level GLM is performed, consisting of fitting a model, applying contrasts, and generating heat-maps based on specified thresholds. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 Which Modules do I Use?\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i0 \cf0 \
+The main challenge of designing a tasklist is identifying which modules to include. There are over 200 available in the current distribution (see the 
+\f2 aa_modules
+\f1  directory). Some guidance is provided by examining the modules themselves. Each consists of a Matlab mfile and an associated xml header (don\'92t confuse these with your tasklist and userscript \'97 these are files that live in the 
+\f2 aa_modules
+\f1  directory). The xml header often provides information as to the function and correct usage of the module. There should be a brief description of the functionality and a list of required parameters (including default values). Particularly helpful are the 
+\f2 inputstreams
+\f1  and 
+\f2 outputstreams
+\f1  specified in the header. Taken as a whole, your tasklist should define an unbroken chain of streams in which the input of each module is listed as the output of another module appearing earlier in the tasklist (a \'93stream\'94 is an internal data abstraction aa uses for file management). For example, 
+\f2 aamod_realign
+\f1  takes an epi stream as input (\'93epi\'94 is aa shorthand for a functional image). Therefore, some module earlier in the tasklist must generate an epi stream as an output. This is provided by 
+\f2 aamod_convert_epis
+\f1 . In turn, the output streams created by 
+\f2 aamod_realign
+\f1  are used by modules appearing later the tasklist, and so on. When aa first launches, it prints a summary of input/output dependencies in the Matlab command window. Execution will halt if a necessary stream is missing. \
+\
+Unfortunately, module header information is not always reliable. Some descriptions do not describe the actual functionality and even the module names themselves are rather confusing. Some modules were created on-the-fly for a specific (or even temporary) application which then somehow made it into the official aa distribution. Such is the nature of research software. Facility in designing a good tasklist will only come with experience.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 Module Parameters
+\f1\i0 \
+\
+Parameters for a given module can be specified in the tasklist using the 
+\f2 extraparameters
+\f1  tag. Here is an example showing changing the sampling interval (samp) of 2 mm for the segmentation module 
+\f2 aamod_segment8_multichan
+\f1  (this overrides the default setting in the module of 1 mm):\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 		<module><name>aamod_segment8_multichan</name>\
+			<extraparameters>\
+				<aap><tasklist><currenttask><settings>\
+					<samp>2</samp>\
+				</settings></currenttask></tasklist></aap>\
+			</extraparameters>\
+		</module>
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+It\'92s possible to specify all analysis parameters in the tasklist. However, because the xml syntax is rather unwieldy, most analysis settings are specified in the userscript.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \
+Note the tag 
+\f2 extraparameters
+\f1  is rather misleading; we are not specifying an "extra" parameter for the module but rather overriding the default value. The full list of parameters availble for a given module can be found in the module's xml header.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\i0\b \cf0 1.2 The Userscript
+\f1\b0 \
+
+\f0\b \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 The second component required to describe your analysis to aa is the userscript. This is a standard Matlab script, albeit customized to interact with data structures defined by aa. Any valid Matlab code can be included, but there are several aa-specified features required. The userscript is typically organized as follows:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 	i) 	Initialization\
+	ii) 	Setting analysis-specific parameters in the aap structure\
+	iii) 	Specifying the data directories\
+	iv) 	Specifying the data - Structural\
+	v) 	Specifying the data - Functional\
+	vi) 	Specifying the GLM Model\
+	vii)	Running the analysis\
+	viiii)	Reporting\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+For example, here is the userscript used with the tasklist given above (an explaination of specific entries is provided below):\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5 \cf0 	% initialization\
+	clear all\
+	aa_ver5;\
+	aap = aarecipe('aap_parameters_defaults.xml','aa_NAMWORDS.xml'); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f4\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\i0 \cf0 	% overwrite desired parameter defaults\
+	aap.acq_details.numdummies = 0;	% do not remove any epi files from the collection\
+	aap.options.NIFTI4D = 1; 			% combine functional DICOMS into one nifti file\
+	aap.tasksettings.aamod_smooth.FWHM = 12; % smoothing (Full Width Half Maximum)m\
+		\
+	% data directories\
+	aap.directory_conventions.rawdatadir = '/Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS';\
+	aap.acq_details.root = '/Users/peellelab/PROJECTS/NAMWORDS';\
+	aap.directory_conventions.analysisid = 'RESULTS'; \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f4\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\i0 \cf0 	% specify data - structural\
+	aap.options.autoidentifystructural = 1;\
+	aap.options.autoidentifystructural_choosefirst = 1;\
+	aap.options.autoidentifystructural_chooselast = 0;\
+	aap.directory_conventions.protocol_structural = 'T1w_MPR';\
+\
+	% specify data - functional\
+	aap = aas_addsubject(aap, 'PL00123', 'PL00123_01', 'functional', [ 12 14  ]);\
+	aap = aas_addsubject(aap, 'PL00456', 'PL00456_01', 'functional', [ 12 15  ]);\
+\
+	% you must define a session for each functional series that appears in addsubject\
+	aap = aas_addsession(aap,'SESS01\'92);\
+	aap = aas_addsession(aap,'SESS02\'92);\
+\
+	% specify events and contrasts for the GLM\
+	aap = aas_addevent(aap, 'aamod_firstlevel_model', 'PL00123', 'SESSO1', 'noise', [0:10:100], 3); \
+	aap = aas_addevent(aap, 'aamod_firstlevel_model', 'PL00123', 'SESSO2', 'words', [5:95:1000], 3); \
+	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [1 0], 'noise', 'T');
+\f0 \
+
+\f5 	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [0 1], 'words', 'T');
+\f0 \
+
+\f5 	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [-1 1], 'words_G_noise', 'T');
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f4\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\i0 \cf0 	% processing and reporting\
+	aa_doprocessing(aap);\
+	aa_report(fullfile(aas_getstudypath(aap),aap.directory_conventions.analysisid)); % optional\
+	aa_close(aap);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+We now examine each section of the sample userscript in more detail.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+i) Initialization\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 A userscript usually begins with the same lines:
+\f2 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	clear all\
+	aa_ver5;\
+	aap = aarecipe('aap_parameters_defaults.xml\'92,\'92aa_NAMWORDS.xml\'92);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+Note the use of 
+\f2 clear all
+\f1  to reinitialize the Matlab workspace prior to each execution. This is generally a good idea.\
+\
+The main code here is the call to 
+\f2 aarecipe
+\f1 . The function takes two filenames as input; these files must live somewhere in your Matlab path. The second of these is the analysis tasklist (defined in the previous section). The first of these is a 
+\f3\i default
+\f1\i0  
+\f3\i parameter file
+\f1\i0 . This defines default values for approximately 200 parameters used by aa. A collection of sample default parameter files can be found in the aa_recipes_and_parametersets subdirectory in the aa distribution. One of these has probably been customized for your installation.\
+\
+The default parameters are returned by 
+\f2 aarecipe
+\f1  in a Matlab structure (called 
+\f2 aap
+\f1  by convention). The remainder of the userscript serves to customize values in this structure appropriate to the analysis specified in the tasklist.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+ii) Setting analysis-specific parameters in the aap structure\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 The aap structure contains a vast amount of information defining relevant analysis parameters, on everything from the analysis directory structure to the colors used in text aa generates (you can examine the contents of this structure in the command window). We can divide this content into three types 1) entries you will probably never change, probably because you do not use the associated functionality (e.g., the location of MEG data, if you never analyze MEG data), 2) entries you might customize but that do not change from one analysis to the next (e.g., the colors used in text aa generates in the Matlab command window), and 3) entries that are analysis specific (e.g., the location of the data for the current analysis). Entries for (1) you will not change, entries for (2) you will probably change once in the parameter file and entries for (3) you will set in the userscript.\
+\
+The parameters you choose to set and their values will be specific to your analysis. In the example userscript, we set the following:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\i0\b \cf0 	aap.acq_details.numdummies = 0;	\
+	aap.options.NIFTI4D = 1;\
+	aap.tasksettings.aamod_smooth.FWHM = 12;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 This sets the number of initial epi scans to be discarded to zero, informs aa to use a 4D nifti file structure for functional data (instead of a collection of individual 3D volumes) and sets the full-width-at-half-maximum (FWHM) of the Gaussian kernel to 12 mm isotropic (this parameter is used by the module 
+\f2 aamod_smooth
+\f1 ).\
+\
+Footnote: A separate smoothing-related parameter exists in 
+\f2 aap.spm.defaults.smooth.fwhm. 
+\f1 This value is ignored by aamod_smooth. There is, unfortunately, a number of instances in which proper parameter specification in aa is unclear.\
+\
+Note you can also specify parameters for a given module using the 
+\f2 extraparameters
+\f1  tag, as described above. If you assign a value in both the tasklist and in the user script,, the value set in the tasklist (i.e., the 
+\f2 extraparameters
+\f1  setting) takes precedence. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 iii) Specifying the data directories\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+You must tell aa the locations of the data for the analysis and a directory where results will be created. These are specified using three aap entries: \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 	
+\f5 aap.directory_conventions.rawdatadir\
+	aap.acq_details.root\
+	aap.directory_conventions.analysisid \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+These correspond to the following directory structure:\
+
+\f2 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 								aap.acq_details.root\
+										 |\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \ul \ulc0 aap.directory_conventions.rawdatadir		aap.directory_conventions.analysisid\ulnone \
+	  			|	\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0   
+\f5\b \ul subject-1		subject-2 ...\ulnone 		\
+	| data			 | data\
+	| data			 | data\
+	| etc.			 | etc\
+
+\f2\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx6743\tx14477\tx15639\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 The directory structure that actually exists must match the layout implied by the aap directory entries you specify. Whereas 
+\f2 rawdatadir
+\f1  and 
+\f2 root
+\f1  must be full pathnames, 
+\f2 analysisid
+\f1  is directory name that will be created under root (aa does this for you). During analysis, aa will fill 
+\f2 analysisid
+\f1  with results files created by the various modules in the tasklist.\
+\
+NB: The aa directory structure is similar to, but not the same as, the directory structure specified by the Brain Imaging Data Structure (BIDS) specification. When using BIDS, the input directory structure will be in BIDS format, but aa will create output under 
+\f2 aap.directory_conventions.analysisid
+\f1  as usual. Use of BIDS with aa is described in a later section.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 The example tasklist uses these parameters:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap.directory_conventions.rawdatadir = '/Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS';\
+	aap.acq_details.root = '/Users/peellelab/PROJECTS/NAMWORDS';\
+	aap.directory_conventions.analysisid = 'RESULTS'; 
+\f1\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 As such, aa will assume the data for this analysis is organized as the following directory tree:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 		/Users/peellelab/PROJECTS/NAMWORDS\
+							 |\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 			\ul SUBJECTS				RESULTS\ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 	  			|	\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0   	
+\f5\b \ul PL00123_01		PL00456_01\ulnone  	\
+	| data			 | data\
+	| data			 | data\
+	| etc.			 | etc
+\f2\b0 										                 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 The contents of the "data" directories depends on the type of data collection. For WashU CNDA download, \'93data\'94 will consist of nested subdirectories 
+\f2 SCANS/#/DICOM/<files.dcm>
+\f1 , where # is the series number. \
+\
+Specifying the subject IDs (here PL00123_01 and PL000456_01) is explained in the next section.\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 iv) Specifying the Data - Structural\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+Specifying the data (structural and functional) is perhaps the most confusing (and often frustrating) aspect of using aa. For DICOM input, you will use the function 
+\f2 aas_addsubject
+\f1  to specify structural and functional files for each subject and session. Unfortunately, the syntax and usage is rather confusing. The function works in concert with the 
+\f2 aamod_autoidentifyseries_*
+\f1  module included in the tasklist (
+\f2 aamod_autoidentifyseries_timtrio
+\f1  in our example). When the module runs, it identifies the series numbers from all DICOM files present in 
+\f2 rawdatadir
+\f1  (and all subdirectories). Each call to 
+\f2 addsubject
+\f1  associates one or more of these series numbers with a structural or functional inputstream (you might think of the function name as being \'93
+\f2 add
+\f5\b DataFor
+\f2\b0 Subject
+\f1 \'94).\
+\
+There are a number of variant of the addsubject syntax. See 
+\fs34 \ul Notes on aas_addsubject\ulnone  in the appendix.
+\fs32  The simplest syntax is as follows:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addsubject(aap, subjectID, data-directory-for-subjectID);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f2\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 Here, 
+\f2 subjectID
+\f1  is a string identifier you create for the given subject and 
+\f2 data-directory-for-subjectID
+\f1  is the literal directory name under 
+\f2 rawdatadir
+\f1  where data for the subject lives. For example (refer to the directory tree example shown above):\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addsubject(aap, 'PL00123', 'PL00123_01');\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+This creates an indentifier "PL00123" that can be used as a parameter in subsequent aa function calls. (Although this example may seem trival, defining a subjectID is very useful when the directory naming is more complicated -- for example, if the directory had been 
+\f2 PL00123%CNDA084##883_RUN2/02/02/2013
+\f1  and not 
+\f2 PL00123_01
+\f1 .\
+\
+This form of 
+\f2 addsubject
+\f1  only defines a subject ID. Usually, a call to 
+\f2 addsubject
+\f1  will also include structural or functional (or both) series numbers for the subject. Structural input works somewhat differently than functional. Typically, an analysis takes only one structural image (e.g, T1) per subject (although sometimes a T2 image is also included). As such, aa uses a shorthand for specifying the structural input: It will automatically use the either first structural image it finds in 
+\f2 rawdatadir
+\f1  or the last. (If your data includes more than two structural images, a way will be described later to override first-or-last selection). As such, it\'92s possible to define your structural input without calling 
+\f2 addsubject
+\f1  explicitly.\
+\
+The relevant 
+\f2 aap
+\f1  parameters are shown in the following code:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap.options.autoidentifystructural = 1;\
+	aap.options.autoidentifystructural_choosefirst = 1;\
+	aap.options.autoidentifystructural_chooselast = 0;\
+	aap.directory_conventions.protocol_structural = 'T1w_MPR';\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+The 
+\f2 choosefirst
+\f1  and 
+\f2 chooselast
+\f1  parameters are self-explanatory. However, for aa to automatically identify the structural image, 
+\f2 autoidentifystructural
+\f1  must be set to true as shown here (this is typically the default in most parameter sets). Furthermore, the proper structural protocol must be specified in the 
+\f2 protocol_structural
+\f1  field. aa attempts to identify the structural (i.e., T1) data by examining the headers of each file that exists in the subject directory tree (this can take some time to complete on large data sets). The identifier for the structural scan is protocol dependent which is why it must be specified in the 
+\f2 protocol_structural
+\f1  field. The value for a given DICOM file can be found by examining the header. Note different scanner manufacturers store the protocol in different header fields. For example, General Electric uses the field 
+\f2 SeriesDescription
+\f1  whereas Siemens uses 
+\f2 ProtocolName
+\f1 . Furthermore, different studies may use different protocol names for the structural scan. Protocols you may come across include 
+\f3\i Mprage, MPR_1mm_iso, T1w_MPR, 
+\f1\i0 and 
+\f3\i MPRAGE_Sag
+\f1\i0 . Make sure capitalization and whitespace matches exactly when specifying these. \
+\
+A set of 
+\f2 aap
+\f1  fields are also defined for automatic T2 input:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap.options.autoidentifyt2 = 1;\
+	aap.options.autoidentifyt2_choosefirst = 1;\
+	aap.options.autoidentifyt2_chooselast = 0;\
+	aap.directory_conventions.protocol_t2 = 'T2w_SPC\'92;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+here, T2w_SPC is the protocol we typically use for T2 acquisition.\
+\
+Should you need to override first-or-last selection, you can pick any structural series found in the data by using 
+\f2 addsubject
+\f1  and passing the keyword 
+\f2 structural
+\f1  followed by a series identifier. For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f2 \cf0 	aap = aas_addsubject(aap, 'PL00123', 'PL00123_01', \'91structural\'92, 7);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+Note: You cannot use 
+\f2 addsubject
+\f1  to select a T2 series (use choosefirst/last instead). This may change in future aa releases.\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 v) Specifying the data -- Functional\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f2\i0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 Specifying functional data is similar to specifying structural data. However, there is no "autoidentify" option for functional data \'97 aa 
+\f3\i always
+\f1\i0  autoidentifies all the functional data and you simply pick the specific sessions (be sure the session numbers you specify actually exists in the data).\
+\
+There are typically multiple functional sessions in a study. These are specified by passing a vector of series numbers to 
+\f2 addsubject
+\f1 :\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addsubject(aap, 'PL00123', 'PL00123_01', 'functional', [ 12 14 ]);\
+	aap = aas_addsubject(aap, 'PL00456', 'PL00456_01', 'functional', [ 12 15 ]);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+Note the keyword 
+\f3\i functional
+\f1\i0  is used in 
+\f2 addsubject
+\f1  to indicate functional (i.e., BOLD) data. In peelle lab data, this number is created automatcially when the data is collected and is shown to the left of each file when reviewing data in CNDA. It is also appears as a directory name in the downloaded directory tree. For example, the example shown here assumes the following directories exist:\
+\
+	
+\f5\b /Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS/PL00123_01/scans/12\
+	/Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS/PL00123_01/scans/14
+\f1\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	/Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS/PL00456_01/scans/12
+\f1\b0 \
+
+\f5\b 	/Users/peellelab/PROJECTS/NAMWORDS/SUBJECTS/PL00456_01/scans/15
+\f1\b0 \
+\
+To complete specification of functional data, we must formally create a session. This is done using the 
+\f2 addsession
+\f1  function. The general syntax goes:\
+\
+
+\f5\b 	aap = aas_addsession(aap,session-name);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+The session-name is arbitrary -- these are simply strings aa uses to label analysis results for given session. You will probably use names that are meaningful to the analysis like \'93resting-story\'94 or \'93famous faces.\'94  aa associates the names you create in 
+\f2 addsession
+\f1  to the session data in the order they are listed in 
+\f2 addsubject
+\f1 . \ul There must be one call to 
+\f2 addsession
+\f1  for each functional series entry appearing in 
+\f2 addsubject
+\f1 \ulnone . If these don\'92t match, aa will crash later in the analysis with an mysterious 
+\f3\i index exceeds array bounds
+\f1\i0  message. The session IDs do not have to be identical for each subject (although they are in our example), but there must be the same number defined for each subject (e.g., we could not define four sessions for our first subject and three or five (or whatever) for the other).\
+\
+In our example userscript, we specify two sessions in 
+\f2 addsubject
+\f1 , so we define two sessions using 
+\f2 addsession
+\f1 :\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addsession(aap,'SESS01\'92);\
+	aap = aas_addsession(aap,'SESS02\'92);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+The names are arbitrary (although "session" or "sess" is common). However, these names are used in other aa functions that will probably appear in your usescript (such as 
+\f2 aas_addevent
+\f1 ) to identify the session. It is also good practice (but not necessary) to include the session label in metadata file names to make it easier to identify the correct metdata for a given session.\
+\
+Tip: Never use special characters such as ! @ # $ % ^ & * ( ) \{ \} ? .  /  ~ `  >  or < in a session name (or in any aa specifier -- see also: contrast names). The reason is aa often uses these labels to name files, and filenames containing special characters create problems for OS X and Unix.
+\f3\i \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i0\fs30 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i\fs32 \cf0 Working with Nifti Files
+\f1\i0 \
+\
+The example script shown above assumes the data files are in DICOM format. Often, you will work with nifti files, especially when using data posted on a public repository such as OpenFMRI. This requires modification of both the tasklist and userscript.\
+\
+The modules used for nifti structural and functional input are, respectively, 
+\f2 aamod_structuralfromnifti
+\f1  and 
+\f2 aamod_epifromnifti
+\f1 . Use these instead of the dicom input modules that appear in the tasklist. That is, the block:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	<module><name>aamod_autoidentifyseries_timtrio</name></module>\
+	<module><name>aamod_get_dicom_structural</name></module>            \
+	<module><name>aamod_convert_structural</name></module>\
+	<module><name>aamod_get_dicom_epi</name></module>\
+	<module><name>aamod_convert_epis</name></module>   \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0   \
+in the example tasklist would be replaced by:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	<module><name> aamod_structuralfromnifti</name></module>\
+	<module><name> aamod_epifromnifti</name></module>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+Note there is no equivalent of autoidentify for nifti (DICOM files include information that can be used for auto-identification; nifti files do not). As such, the autoidentify fields in the aap structure are meaningless for nifti input. This includes 
+\f2 aap.options.autoidentifystructural
+\f1  , 
+\f2 aap.options.autoidentifystructural_choosefirst
+\f1 , and  
+\f2 aap.directory_conventions.protocol_structural
+\f1 , as well as the corresponding entries for T2 (if a T2 file is to be used). Instead, full pathnames to the structural file(s) must be included in the call to 
+\f2 aas_addsubject
+\f1 . Similarly, functional files must also be specified explicitly (rather than as a list of series numbers). Here\'92s example code that specifies a T1 and one epi for input:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	s_File = '/Users/peellelab/data/resting_study/T1w.nii';\
+	f_File = '/Users/peellelab/data/resting_study/rest_bold.nii';\
+	\
+	aap = aas_addsubject(aap, \'92S01\'92, \'92S01\'92, 'structural', \{s_File\}, 'functional', \{f_File\});\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0             \
+Note the use of the \'91structural\'92 and \'91functional\'92 keywords, and that the paths are passed as a cell array.\
+\
+A final difficulty of using nifti files is that critical analysis parameters (e.g., TR) must be provided explicitly because they do not reside in the data files. There are several options for doing so. The most convenient is to pass an auxillary file containing this information in the call to 
+\f2 addsubject
+\f1 . This information is provided as a JSON file in many public repositories (it\'92s part of the BIDS specification. In fact, there is an aa function 
+\f2 aas_processBIDS
+\f1  you can include in the tasklist to simplify the input process, assuming your data is BIDS-compatible). Alternately, it may be supplied as a DICOM \'93dcmhrd\'94 header (see the Matlab documentation on 
+\f2 dicominfo
+\f1  for more information on the dcmhdr file format). Note that while a DICOM header contains a great deal of information, most aa modules require only the TR field, and as of this writing none use fields other than 
+\f2 TR, TE, slicetimes, sliceorder, 
+\f1 and
+\f2  echospacing
+\f1 .\
+\
+The header information is combined with the epi file as a structure having the fields 
+\f2 hdr
+\f1  and 
+\f2 fname
+\f1 . Here is how we would include a JSON header for the epi file in the previous code example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	s_File = '/Users/peellelab/data/DOSENBACH/RSTESTDATA/sub-MSC01_T1w.nii';\
+\
+	fname = '/Users/peellelab/data/DOSENBACH/RSTESTDATA/sub-MSC01_rest_bold.nii';\
+	hname = '/Users/peellelab/data/DOSENBACH/RSTESTDATA/task-rest_bold.json';\
+\
+	f_struct = struct('fname', fname, 'hdr', hname);\
+\
+	aap = aas_addsubject(aap, \'92S01\'92, \'91S01\'92 'structural', \{s_File\}, 'functional', \{f_struct\});\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+Note the struct is passed as a cell array (in this example the array contains a single entry). Typically you would include several epi files, each paired with a header in a struct array.\
+\
+
+\f3\i Footnote
+\f1\i0 : You do not need to include an aas_addsubject call when using BIDS importat (see Appendix foobar).\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+vi) Specifying the GLM\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+Automatic analysis allows you to define a block- or event-related GLM. The relevant modules in the tasklist are 
+\f5\b aamod_firstlevel_model
+\f1\b0 , 
+\f5\b aamod_firstlevel_contrasts 
+\f1\b0 and 
+\f5\b aamod_firstlevel_threshold
+\f1\b0  (these correspond, roughly, to the
+\f2  Specify 1st-level,
+\f1  
+\f2 Review
+\f1 , and 
+\f2 Results
+\f1  buttons in the SPM gui). \
+\
+To define a model, you must specify events and constrasts. The functions in aa for doing so are 
+\f2 addevent
+\f1  and 
+\f2 addcontrast
+\f1 . The first is used to define the events in the model (the function name is a bit confusing: it works for either block-design or event-related designs). The general syntax goes as follows:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addevent(aap, module, subjectID, sessionID, event-name, onsets, durations);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+As with many aa functions, 
+\f2 aas_addevent
+\f1  takes a variety of input arguments. We pass in the module name for which we are defining the event (for a first level GLM this will almost always be 
+\f2 aamod_firstlevel_model
+\f1  ; however this could be whatever modeling module appears in the tasklist). This is following by the subject and session the event applies to. The event itself is defined by a name (a label aa will use in results reporting) and then the onset and duration of the events. Consider our example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addevent(aap, 'aamod_firstlevel_model', 'PL00123', 'SESSO1', 'noise', [0:10:100], 3); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 In this (completely fictitious) example, we presented 3 seconds of noise ten times (at time 0, at time 10, at time 20, etc \'97 [0:0:100] is just Matlab colon notation) during the functional scan we labeled as SESS01.  Here it is assumed the events all have the same duration; otherwise we would pass a vector of durations instead of a single duration to be applied to all events.\
+\
+The above example specifies a block design. An event-related design would have event durations of zero:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addevent(aap, 'aamod_firstlevel_model', 'PL00123', 'SESSO1', 'noise', [0:10:100], 0); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 Any session name appearing in a call to addevent must have been previously defined in a call to 
+\f2 addsession
+\f1 . Also, be sure that the timing vector passed in is consistent with the TR used in data collection (e.g., do not use milliseconds for one and seconds for the other). You should alway examine the SPM design matrix to check your model -- aa will save this as part of the results (see next section).\
+\
+The 
+\f2 addevent
+\f1  function also accepts wildcards to avoid having to specify events for every subject and session. For example, we can specify a block event for all subjects and sessions in the experiment  using one call to 
+\f2 addevent
+\f1 :\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addevent(aap, 'aamod_firstlevel_model', '*','*', 'noise', 0:10:100, 3); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+Note the wildcards for the subject and session IDs. (This of course assumes the data for all subjects and sessions was acquired using the same stimulus protocol!)\
+\
+NB: In most lab studies, event data will be provided by the experimenter. This typically takes the form of an Excel spreadsheet or (preferred) a CSV (comma separated values) plaintext file. Custom Matlab scripts are available to parse such data, assuming it is in the proper format.
+\f3\i \
+
+\f1\i0 \
+We define a GLM contrast in aa using 
+\f2 addcontrast
+\f1 . The syntax is similar to that of 
+\f2 addevent
+\f1 :\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addcontrast(aap, module, subjectID, sessionID, contrast_vector, contrast_name, T_or_F_flag);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 Our simple example demonstrates typical usage:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [1 0], 'noise', 'T');
+\f0 \
+
+\f5 	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [0 1], 'words', 'T');
+\f0 \
+
+\f5 	aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', [-1 1], 'words_G_noise', 'T');
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 This defines a t-contrast (i.e., a one-sided contrast, as opposed to a two sided "F" contrast)  the module firstlevel_contrasts (the module named must appear in the tasklist). The subject wildcard indicates this contrast should be applied to all subjects in the study, and the keyword "sameforallsessions" indicates this contrast should be applied to all sessions in each subject. For example, I named the first contrast 'noise' (i.e., "noise > 0"), the second 'words' (i.e., "noise > 0"), and the third words_G_noise (i.e., "words > noise"). As with event names, avoid the use of special characters such as ">" or whitespace in contrast names.\
+\
+In this example, the contrast vector assumes the existence of a total of two events (because only two events were defined in addevents). You may define any constrast vector you like (e.g, [1  -1] would test the contract (beta-1 \'96 beta-2) =/= 0). The vector passed to 
+\f2 addcontrast
+\f1  does not need to include all entries -- if there are more beta values in the model than entries in the vector, aa will fill in the remaining entries with zeros (in fact, aa adds zeros for nuisance regressors and a constant column for each session. You usually never have to interact with this).\
+\
+As with many functions in aa, a great variety of parameters and values can be passed to 
+\f2 addcontrast
+\f1  which allows you to define sophisticated model contrasts. See the userscript examples in the distribution and the comments in 
+\f2 aas_addcontrast.m 
+\f1 for more information.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+vii) Running the analysis\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 So far. the code in the userscript has only filled fields in the aap structure. Actually launching the analysis involves passing the structure to to 
+\f2 aa_doprocessing
+\f1 :\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\i0\b \cf0 	% processing and reporting\
+	aa_doprocessing(aap);\
+	aa_report(fullfile(aas_getstudypath(aap),aap.directory_conventions.analysisid)); % optional\
+	aa_close(aap);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 The call to 
+\f2 aa_doprocessing
+\f1  is followed by (optionally) generating an analysis report (described in the next section). The userscript should be terminated using 
+\f2 aa_close
+\f1 , which performs various housecleaning tasks.\
+\
+During the analysis, aa will print informative information to the command window. Depending on the nature of your analysis, it will also generate various figures (may of these through SPM). Output files are organized by module. When the analysis concludes, the directory tree will have been updated to included results as a collection of subdirectories under 
+\f2 analysisid
+\f1 :
+\f0\b \
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5 \cf0 		/Users/peellelab/PROJECTS/NAMWORDS\
+							 |\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 			\ul SUBJECTS				RESULTS\ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 	  			|					   		|\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0   	
+\f5\b \ul PL00123_01		PL00456_01\ulnone  		aamod_autoidentifyseries_timtrio_00001\
+	| data			 | data				aamod_get_dicom_structural_00001\
+	| data			 | data				aamod_convert_structural_00001\
+	| etc.			 | etc				aamod_get_dicom_epi_00001 etc...\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 Each module in the tasklist will generate its results in a corresponding named folder under 
+\f2 aap.directory_conventions.analysisid
+\f1 , creating various nested subdirectories therein as needed. Note aa adds a number suffix to the directory names corresponding to the appearance of the module in the tasklist. For example, if three instances of aamod_firstlevel_model appeared, aa would create directories  
+\f2 aamod_firstlevel_model_00001
+\f1 , 
+\f2 aamod_firstlevel_model_00002
+\f1 , and 
+\f2 aamod_firstlevel_model_00003
+\f1  during the analysis. Multiple module instances such as this are common in 
+\f3\i branched
+\f1\i0  tasklists. See Appendix A2 for an example.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 viiii)	Reporting
+\f1\i0\fs30 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs32 \cf0 During analysis, aa generates a large amount of graphical output in addition to the statistical parameter maps that are ultimately the result of interest (a familiar example of such a graphic are the head motion estimates SPM plots at the conclusion of realignment). For convenience, aa provides a post-analysis utility called 
+\f3\i report generation
+\f1\i0  that will collect these files into a single document. The syntax is the following:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 	aa_report(fullfile(aas_getstudypath(aap),aap.directory_conventions.analysisid));\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0\fs30 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs32 \cf0 This creates multiple files (depending on the modules included in the tasklist) at the root level of the analysis results directory. Examples include:\
+\
+	report.html			\'97 all analysis results\
+	report_moco.html		\'97 motion correction only\
+	report_reg.html			\'97 coregistration only\
+	report_scon.html		\'97 contrast results only\
+	report_subjects.html		\'97 subject level results only\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs30 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs32 \cf0 The report can be opened in any web browser. One disadvantage of the report is the graphics are embedded as hardcoded html image tags, so if you move or copy the report the browser will longer be able to find the contents. A workaround to this problem is to convert the report to pdf. The free utility 
+\f3\i wkhtmltopdf
+\f1\i0  works nicely for this.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i0 \cf0 NB: Some parts of aa reporting use FSL. If you do not have FSL installed, reporting may fail. See also: 
+\f3\i FSL setenv Trick,
+\f1\i0  below. Additionally, reporting is unfortunately a bit buggy overall. An alternative to using aa_report is to use the standalone tool aa_jpg_crawler.m which will assemble all images generated during an analysis into a scrollable html collection. This tool is available from  aa basecamp in the 
+\f3\i Useful Code
+\f1\i0  folder.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+Appendix A0: Miscellaneous aa Quirks\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+1) \ul Sparse Sampling\ulnone \
+\
+It is sometimes necessary to change the HRF parameters SPM uses for modeling. The two quantities of interest are xBF.T (the number of microtime bins SPM uses in its modeling) and xBF.T0 (the microtime bin number the model you've specified should be dropped down at). The default value of xBF.T is 16 and we have found no reason to ever change this. However, when using 
+\f3\i sparse sampling
+\f1\i0 , the value of xBF.T0 must be changed to 1 (the telltale sign that T0 is incorrect is that parameter maps SPM generates are all blank). Include this line somewhere in your userscript:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	aap.tasksettings.aamod_firstlevel_model.xBF.T0 = 1;
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+Note this code is only valid in a userscript if 
+\f2 aamod_firstlevel_model
+\f1  is present in the tasklist, otherwise a runtime error will occur.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b\fs30 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0\fs32 \cf0 2) \ul FSL 
+\f3\i setenv
+\f1\i0  Trick\ulnone \
+\
+aa uses FSL in report generation even if you do not use FSL in your analysis. Unfortunately, sometimes FSL is not properly initialized when Matlab starts (the telltale sign is reporting fails with a mysterious  FSL runtime error).\
+\
+To be sure FSL is properly initialized, include the following in your userscript:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	FSL_binaryDirectory = '/usr/local/fsl/bin'; \
+	currentPath = getenv('PATH');\
+	if isempty(strfind(currentPath,FSL_binaryDirectory))\
+    	correctedPath = [ currentPath ':' FSL_binaryDirectory ];\
+    	setenv('PATH', correctedPath);\
+	end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+Put this code immediately after the call to 
+\f2 aas_configforSPM12
+\f1 .\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \
+3) \ul Restarting a Partial Analysis\ulnone \
+\
+On startup, aa will examine the contents of the results directory tree (if it exists) and skip tasks in the tasklist that have already been completed (i.e., if a previous analysis did not run to completion, say, due to a runtime error). As such, if you wish to force an analysis to start from scratch, you must delete the results directory (i.e., 
+\f2 aap.acq_details.root/aap.directory_conventions.analysisid \'97
+\f1  do NOT delete 
+\f2 rawdatadir
+\f1 ) before restarting. If you would like to rerun part of a completed (or partially completed) analysis, just delete that module\'92s output directory in the results directory tree. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\i \cf0 The aa \'93restart CD directory\'94 bug\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+There is a bug in the initialization code that aa will sometimes crash when attempting to restart a partial analysis, especially one that failed or you halted from the debugger. The error message is something like 
+\f3\i Cannot CD to <some-module directory>. Name is nonexistent or not a directory
+\f1\i0 .  Solution: Ignore the message. Restart a second time and the error should vanish.\
+\
+Update: This glitch can be avoided by placing a 
+\f2 cd('~');
+\f1  cd the start of your userscript.\
+Update: This glitch seems to be fixed in the most recent aa version.\
+\
+4) \ul The ~/.aa directory\
+\ulnone \
+At the start of each analysis, aa creates a \'93worker\'94 file in the (hidden) directory ~/.aa. It is occasionally useful (or necessary) to delete these files (note a warning may appear in the command window when aa is next run after doing so). You can also set the 
+\f2 workercleanup
+\f1  field in 
+\f2 aap.options
+\f1  to automatically delete these files after a fixed period (which will otherwise accumulate indefinitely).
+\f0\b \
+\
+
+\f1\b0 5) \ul Garbage Collection\ulnone \
+\
+aa is a disk hog. It generates multiple copies of files throughout the analysis directory tree (although it will use links* when it can). If your disk space is tight, you may want to use aa 
+\f3\i garbage collection 
+\f1\i0 to delete any duplicate files at the conclusion of an analysis. Include the following module at the very end of your tasklist:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	<module><name>aamod_garbagecollection</name></module>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+* due to arcane programming reasons, aa uses 
+\f3\i hard
+\f1\i0  links (not soft links). These files will appear to be duplicates, but in fact no additional disk space is consumed. Hard links are difficult to identify \'97 the only sure way is to compare file inode numbers. As such it\'92s probably best to manage file cleanup using aa garbage collection.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 6) \ul Parallel and Cluster Programming\ulnone \
+\
+aa has code that will allow you to run the analysis using a local multicore or a dedicated computing cluster (at WashU, the latter is run by the Center for High Performance Computing, or CHPC). These resources are selected by the 
+\f2 wheretoprocess
+\f1  field under 
+\f2 aap.options
+\f1 . For our lab, the are basically three alternatives:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f6\b \cf0 	aap.options.wheretoprocess = 'localsingle';\
+	aap.options.wheretoprocess = \'91matlab_pct\'92;\
+	aap.options.wheretoprocess = 'qsub';
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 localsingle
+\f1  (the default) carries out the analysis on your local machine, 
+\f2 pct
+\f1  will run the analysis using the local multicore architecture, and 
+\f2 qsub
+\f1  is used to run the analysis on the CHPC cluster.\
+\
+If your machine has multiple CPU cores (in OS X, check the \'93Processor\'94 entry under
+\f3\i  About This Mac
+\f1\i0 ) and the Matlab Parallel Toolbox is installed, there is almost no reason to not use 
+\f2 matlab_pct
+\f1  instead of 
+\f2 localsingle
+\f1  on every job. This will provide a speed-up by about a factor of the number of workers. Two other parameters should be set here:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f6\b \cf0 	aap.directory_conventions.poolprofile = 'local';\
+	aap.options.aaparallel.numberofworkers = 12;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+Selecting the optimal value for the numberofworkers (shown as '12' in this example) can require some trial and error. Theoretically, this should be the number of cores in your machine minus one (ignoring multithreading issues). However, the aa scheduling engine places further restrictions on the value and may crash if set too high.\
+\
+Use of the CHPC cluster offers a more substantial speedup (from about x50-100*), but there is a substantial setup effort required. If you would like to explore this option, speak with a senior laboratory member.\
+\
+* Theoretically. The CHPC is poorly configured for Matlab in general and aa in particular. In fact, most analyses will run faster using the PCT (and sometimes even using localsingle) than they will on the cluster.\
+\
+7) \ul Renaming Streams\ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 Some modules define "placeholder" stream names (e.g., \'93
+\f2 i1\'94
+\f1 ) with an expectation the literal stream name to be passed to the module will be specified by the user. Consider 
+\f2 imcalc
+\f1 : This SPM function can operate on any type of image data (structural, functional, beta-maps, etc) and so a module implementing access to 
+\f2 imcalc
+\f1  cannot hardcode the input stream in advance. Instead, aa implements such functionality by tagging a stream as 
+\f3\i renameable
+\f1\i0  (look for 
+\f2 isrenameable=1
+\f1  in the module xml header). The literal stream name is provided in the userscript using the aa utility function 
+\f2 aas_reanamestream
+\f1 . Here is an example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 	aap = aas_renamestream(aap,'aamod_imcalc_00001','i1\'92,\'92structural\'92);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 \
+This tells aa to use the stream \'93structural\'94 as the input stream 
+\f2 i1
+\f1  in 
+\f2 aamod_imcalc
+\f1 . Note the numerical suffix on the name. Modules in tasklist include an implicit numerical suffix according to the order in which they appear. Here we wish to rename the input stream for the 
+\f3\i first
+\f1\i0  appearance of 
+\f2 aamod_imcalc
+\f1 , so the appropriate suffix is _00001. If there had been additional occurrence of 
+\f2 aamod_imcalc
+\f1  in the tasklist, we could identify those instances using suffixes _00002, _00003, and so on.\
+\
+Note: 
+\f2 aamod_imcalc 
+\f1 was developed at WashU and is not (yet) part of the standard aa distribution.\
+\
+8) 
+\fs34 \ul Notes on aas_addsubject
+\f0\b \ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 The proper use of 
+\f2 aas_addsubject
+\f1  depends on the subject naming option. This is set in 
+\f2 aap.directory_conventions.subject_directory_format
+\f1 . Briefly, there are four options:\
+\
+1) Explicit list\
+\
+	A subject name list is supplied in 
+\f2 aap.directory_conventions.subject_directory_names
+\f1  (as a cell array). The order of this list should match the order of calls to 	
+\f2 aas_addsubject
+\f1  in your code.\
+\
+2) Automatically, from the data folder name\
+\
+	The subject names are the same as their data directory name (albeit stripped of special characters \'97 see 
+\f2 aas_mriname2subjname
+\f1 ).\
+\
+3) Automatically, from the subject index\
+
+\f2 \
+	aas_addsubject
+\f1  generates subject names of the format S##, in the order called.\
+\
+4) Passed as parameter to addsubject\
+\
+	The subject name is passed explicitly to 
+\f2 aas_addsubject
+\f1 \
+\
+NB: These options are specified in 
+\f2 aap.directory_conventions.subject_directory_format
+\f1  as 0-3, not 1-4.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\i \cf0 Example\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i0 \cf0 \
+Here are representative examples. Assume 
+\f2 datafoldername = \'91PL0001_01\'92 
+\f1 and assume this is the first call to addsubject (the ellipsis represents some combination of \'91structural\'92 , \'91functional\'92 ,etc file specification): \
+\
+option=0) 
+\f5\b aap = aas_addsubject(aap, datafoldername, \'85);
+\f1\b0  \
+\
+	This results in subject name = 
+\f2 aap.directory_conventions.subject_directory_names\{1\}.
+\f1 \
+\
+option=1) 
+\f5\b aap = aas_addsubject(aap, datafoldername. \'85);
+\f0 \
+
+\f1\b0 \
+	This results in subject name = \'91PL0001\'92 (note stripping of underscore and suffix).\
+\
+option=2)
+\f2  
+\f5\b aap = aas_addsubject(aap, datafoldername, \'85);
+\f1\b0 \
+\
+	This results in subject name = \'92S01\'92.\
+\
+option=3) 
+\f5\b aap = aas_addsubject(aap, \'91subject-1\'92, datafoldername, \'85);
+\f2\b0 \
+
+\f1 \
+	This results in subject name = \'91subject-1\'92.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b\fs32 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 Note all of this weirdness can be avoided by simply using BIDS import (see next item).\
+\
+\
+9) \ul BIDS import and export\ulnone \
+\
+Automatic Analysis supports import from and export to BIDS (Brain Imaging Data Structure) format, although the functionality is currently somewhat incomplete. Export to BIDS is done using 
+\f2 aa_export_toBIDS
+\f1 , which will rearrange an existing aa analysis directory tree so that it is BIDS compliant. The function can be run either standalone or be included at the end of a userscript. See the mfile for usage information. BIDS import is done using 
+\f2 aas_processBIDS
+\f1 . This should be called immediately before 
+\f2 aa_doprocessing
+\f1 :\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	aap = aas_processBIDS(aap);\
+	aa_doprocessing(aap);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 The function does all of the session and subject definition for you, so calls to 
+\f2 aas_addsubject
+\f1  and 
+\f2 aas_addsession
+\f1  can be deleted. In fact, a userscript using BIDS import really only needs to  supply 
+\f2 aap.acq_details.root
+\f1 , 
+\f2 aap.directory_conventions.analysisid
+\f1 , and 
+\f2 aap.directory_conventions.rawdatadir
+\f1  \'97 the first two are defined as usual and the last should point to the top level of the BIDS directory tree. Be sure to change any DICOM-related modules in your tasklist to nifti equivalents (e.g., 
+\f2 aamod_structuralfromnifti
+\f1  and 
+\f2 aamod_epifromnifti
+\f1 ), as this is the file format supported by the BIDS standard.\
+\
+In addition, processBIDS allows users to choose a subset of sessions and tasks. The session and/or task name should be cell arrays. For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 	aap = aas_processBIDS(aap, \{\'91func01\'92,\'92func02\'92\}, \{\'91taskname\'92\}) ;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1 \cf0 To specify only the task, insert an empty cell array for the session:
+\f2 \
+\
+ 
+\f5\b 	aap = aas_processBIDS(aap, \{\}, \{\'91taskname\'92\}); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1 \cf0 Do not include the sub\'94 or \'93sess\'94 prefix in the task or session names. \'97 
+\f2 processBIDS
+\f1  will add these for you. Note you can look up the task and session name in the BIDS .json file and copy it to the cell array.\
+\
+See Appendix A2 and A3 for BIDS scripting examples.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 10) \ul Contrasts\ulnone \
+\
+There are two aa quirks to keep in mind when defining contrasts. The first is that aamod_firstlevel_contrasts provides the option to automatically scale contrast vectors by the number of sessions. This is controlled by the parameter 
+\f2 scalebynumberofsessions
+\f1  in the xml header. The default is 1 (true). That means if you supply a contrast, say, [ 1 -1 0 ] and there are four sessions in the data, the contrast vector that will be passed to SPM is [ 0.25 -0.25 0 ] unless you explicity turn off this option. Usually this makes no difference in the results, but scaling can become an issue when comparing across conditions or analyses.\
+\
+Second, if you programatically define a contrast in Matlab, be sure to create a 
+\f3\i row
+\f1\i0  vector, not a column vector. A typical approach is to create a zero vector then fill in the few nonzero entries as needed. Be sure to start with zero(1,dim) not zero(dim,1).\
+\
+11) \ul The Great aa Segmentation Schism\ulnone \
+\
+Older versions of aa offered two competing approaches for doing segmentation/normalization: 
+\f2 aamod_norm_noss
+\f1  and 
+\f2 aamod_segment8
+\f1  as well as variants (e.g., 
+\f2 aamod_segment8_multichan
+\f1 ). Recently (summer 2018), a decision was made by the aa developers to drop 
+\f2 aamod_norm_noss
+\f1 . As such, you should base your pipelines on the segment8 family. However, you may find references to norm_noss variants in some resources.\
+\
+12) \ul Custom Module Development\ulnone \
+\
+You, too, can create modules for aa! See our handy 
+\f3\i aa Module Developer\'92s Guide 
+\f1\i0 in the aa Basecamp Project docs for an introduction to the craft.\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 Appendix A1 - SPM auditory tutorial (ANALYZE format)\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 Here is a tasklist and user script that implements the auditory tutorial from the SPM manual (Chapter 30). See: {\field{\*\fldinst{HYPERLINK "http://www.fil.ion.ucl.ac.uk/spm/doc/manual.pdf"}}{\fldrslt 
+\f0\b http://www.fil.ion.ucl.ac.uk/spm/doc/manual.pdf}}\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs36 \cf0 \ul \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\fs32 \cf0 \ulnone Note this version of the code uses ANALYZE data. See Appendix A2 for a version that uses BIDS-formatted data.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs36 \cf0 \ul \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs34 \cf0 Userscript
+\fs36 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 \ulnone \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% INITIALIZATION\
+% ------------------------------------------------------------------------------------------------------------------------------\
+ \
+clear all;\
+aa_ver5;\
+ \
+parameters_xml = 'aap_parameters_WUSTL.xml'; % our default parameter file\
+tasklist_xml = 'aa_SPM_tutorial.xml';	% see tasklist listing below\
+ \
+aap = aarecipe(parameters_xml,tasklist_xml);\
+ \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% this fixes a Matlab FSL path glitch\
+% ------------------------------------------------------------------------------------------------------------------------------\
+ \
+FSL_binaryDirectory = '/usr/local/fsl/bin'; \
+currentPath = getenv('PATH');\
+if ~contains(string(currentPath),FSL_binaryDirectory)\
+    correctedPath = [ currentPath ':' FSL_binaryDirectory ];\
+    setenv('PATH', correctedPath);\
+end\
+ \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% ANALYSIS SPECIFIC SETTINGS\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+aap.acq_details.root = '/PATH/TO/MoAEpilot';\
+aap.directory_conventions.analysisid = 'RESULTS'; % aa creates this directory under root to save results\
+ \
+aap.options.autoidentifystructural = 0;  % we'll specify data explicitly using addsubject\
+aap.options.NIFTI4D = 1;  % want to convert ANALYZE file into a single 4D nii\
+ \
+% tutorial specific settings (see also .xml header)\
+ \
+aap.acq_details.numdummies = 0;         % SPM12 manual p. 221 - we removed manually\
+aap.tasksettings.aamod_smooth.FWHM = 6; % SPM12 manual p. 227\
+\
+% ------------------------------------------------------------------------------------------------------------------------------\
+% ADD SUBJECTS and STREAMS\
+% ------------------------------------------------------------------------------------------------------------------------------\
+ \
+subjectID = 'M00223';\
+subjectID_dir = 'M00223'; % not used here because we specify sFile and fList, but we must define\
+ \
+sFile = '/PATH/TO/sM00223_002.img';\
+fList = cellstr(spm_select('FPList', '/PATH/TO/fM00223', '.*img$'));\
+ \
+aap = aas_addsubject(aap, subjectID, subjectID_dir, 'structural', \{sFile\}, 'functional', \{fList\});\
+aap = aas_addsession(aap,'session1');\
+ \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% GLM\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+% UNITS can be 'seconds' or 'scans' (SPM auditory tutorial has it set for 'scans')\
+ \
+aap.tasksettings.aamod_firstlevel_model.xBF.UNITS = 'scans'; \
+ \
+aap = aas_addevent(aap,'aamod_firstlevel_model','*','*','Sound', 6:12:84, 6); %refer to the tutorial \
+aap = aas_addcontrast(aap,'aamod_firstlevel_contrasts','*','sameforallsessions', 1,'test-contrast','T');\
+ \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% RUN AND REPORT\
+% ------------------------------------------------------------------------------------------------------------------------------\
+ \
+aa_doprocessing(aap);\
+aa_report(fullfile(aas_getstudypath(aap),aap.directory_conventions.analysisid));\
+aa_close(aap);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \ul \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0\fs36 \cf0 Tasklist (aa_SPM_tutorial.xml)
+\fs32 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 \ulnone \
+<?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+    <tasklist>\
+                \
+        <initialisation>\
+            <module><name>aamod_study_init</name></module>\
+        </initialisation>\
+                \
+        <main>\
+            <!-- data imput -->\
+            <module><name>aamod_structural_from_ANALYZE</name></module>\
+            <module><name>aamod_epi_from_ANALYZE</name>\
+            <extraparameters>\
+                <aap><tasklist><currenttask><settings>\
+                    <repetition_time>7000</repetition_time>\
+                </settings></currenttask></tasklist></aap>\
+            </extraparameters>\
+            </module>\
+            \
+            <!-- preprocessing -->\
+            <module><name>aamod_realign</name></module>\
+            <module><name>aamod_coreg_extended</name></module>  \
+            <module><name>aamod_segment8_multichan</name></module>\
+            <module><name>aamod_norm_write</name></module>\
+            <module><name>aamod_smooth</name></module>\
+     \
+            <!-- GLM -->\
+            <module><name>aamod_firstlevel_model</name>\
+                <extraparameters>\
+                    <aap><tasklist><currenttask><settings>\
+                        <TR>7</TR>\
+                    </settings></currenttask></tasklist></aap>\
+                </extraparameters>\
+            </module>\
+            <module><name>aamod_firstlevel_contrasts</name></module>\
+            <module><name>aamod_firstlevel_threshold</name>\
+                <extraparameters>\
+                <aap><tasklist><currenttask><settings>\
+                     <threshold><p>0.001</p></threshold>\
+                     <!-- change the threshold as needed -->\
+                </settings></currenttask></tasklist></aap>\
+            </extraparameters>\
+            </module>\
+        </main> \
+        \
+    </tasklist>\
+</aap>\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 Appendix A2 - SPM Auditory Tutorial (BIDS format)\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 Here is a Userscript and Tasklist to analyze the SPM Auditory tutorial data in BIDS format (make sure to download the BIDS version of the data from the SPM website).\
+\
+IMPORTANT: There are two glitches in the downloaded data that must be fixed in order to run this (aa is can be unforgiving about strict BIDS compliance):\
+\
+	1. the gzipped version of the T1 is missing in sub-01/anat. The easiest way to fix this is to cd to the directory\
+	from the Matlab command window, then run 
+\f5\b gzip('sub-01_T1w.nii')\
+
+\f1\b0 \
+	2. the gzipped version of the epi is missing in sub-01/func The easiest way to fix this is to cd to the directory\
+	from the Matlab command window, then run 
+\f5\b gzip('sub-01_task-auditory_bold.nii')
+\f1\b0 \
+\
+Additionally, the domain wildcarding in aamod_norm_write does not work with this data. You need to change the line:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 		<currenttask domain='*' desc='SPM normalisation write (stream EPI)' modality='MRI'>
+\f1\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 	to\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b \cf0 		<currenttask domain='session' desc='SPM normalisation write (stream EPI)' modality='MRI'>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+in aamod_norm_write.xml.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs34 \cf0 \ul Userscript\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 \ulnone \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% INITIALIZATION\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+clear all;\
+aa_ver5;\
+\
+aap = aarecipe('aap_parameters_WUSTL.xml','SPM_tutorial_BIDS.xml');\
+\
+% ------------------------------------------------------------------------------------------------------------------------------\
+% FSL hack\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+FSL_binaryDirectory = '/usr/local/fsl/bin'; \
+currentPath = getenv('PATH');\
+if ~contains(currentPath,FSL_binaryDirectory)\
+    correctedPath = [ currentPath ':' FSL_binaryDirectory ];\
+    setenv('PATH', correctedPath);\
+end\
+\
+% ------------------------------------------------------------------------------------------------------------------------------\
+% DEFAULTS AND SANITY CHECKS\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+aap.acq_details.root = '/PATH/TO/MoAEpilot';\
+aap.directory_conventions.analysisid = 'RESULTS';\
+\
+% just point rawdatadir at the top level BIDS dir; processBIDS does the rest\
+\
+aap.directory_conventions.rawdatadir = '/PATH/TO/MoAEpilot';\
+\
+% need to specify chooseblerg otherwise aa crashes\
+\
+aap.options.autoidentifystructural_choosefirst = 1;\
+aap.options.autoidentifystructural_chooselast = 0;\
+\
+aap.options.NIFTI4D = 1;\
+aap.acq_details.numdummies = 0;	\
+aap.acq_details.input.correctEVfordummies = 0;\
+\
+% ------------------------------------------------------------------------------------------------------------------------------\
+% BIDS input\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+aap = aas_processBIDS(aap);\
+\
+% ------------------------------------------------------------------------------------------------------------------------------\
+% GLM\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+% UNITS is 'secs' in event file (even though SPM auditory tutorial uses 'scans')\
+ \
+% aap.tasksettings.aamod_firstlevel_model.xBF.UNITS = 'scans'; \
+aap.tasksettings.aamod_firstlevel_model.xBF.UNITS = 'secs'; \
+ \
+% processBIDS will create the events for the model, but you must define the contrasts\
+\
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts', '*', 'sameforallsessions', 1, 'omnibus','T');\
+						   \
+% ------------------------------------------------------------------------------------------------------------------------------\
+% RUN AND REPORT\
+% ------------------------------------------------------------------------------------------------------------------------------\
+\
+aa_doprocessing(aap);\
+% aa_report(fullfile(aas_getstudypath(aap),aap.directory_conventions.analysisid));\
+aa_close(aap);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0\fs36 \cf0 \ul \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs34 \cf0 Tasklist (SPM_tutorial_BIDS.xml)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 \ulnone \
+\
+<?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+    <tasklist>\
+        <initialisation>	\
+            <module><name>aamod_study_init</name></module>\
+        </initialisation>\
+		\
+        <main>\
+                    \
+        <!-- preprocessing -->\
+\
+        <module><name>aamod_structuralfromnifti</name></module>\
+        <module><name>aamod_reorienttomiddle_structural</name></module>\
+\
+        <module><name>aamod_epifromnifti</name></module>\
+        <module><name>aamod_reorienttomiddle_epi</name></module>\
+\
+        <module><name>aamod_realign</name></module>  \
+        <module><name>aamod_coreg_extended</name></module>\
+        \
+        <module><name>aamod_segment8_multichan</name>\
+             <extraparameters>\
+                <aap><tasklist><currenttask><settings>\
+                    <samp>2</samp>\
+                </settings></currenttask></tasklist></aap>\
+            </extraparameters>\
+        </module>\
+        \
+		<!-- you may need to change domain='*' to domain='session' in aamod_norm_write.xml! \'97>\
+\
+        <module><name>aamod_norm_write</name></module>\
+\
+        <module><name>aamod_smooth</name>\
+            <extraparameters>\
+                <aap><tasklist><currenttask><settings>\
+                    <FWHM>8</FWHM>\
+                </settings></currenttask></tasklist></aap>\
+            </extraparameters>\
+        </module>\
+        \
+        <!-- modeling -->\
+        \
+        <module><name>aamod_firstlevel_model</name></module>\
+        <module><name>aamod_firstlevel_contrasts</name></module> \
+        <module><name>aamod_firstlevel_threshold</name></module>\
+\
+        </main>\
+    </tasklist>\
+</aap>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f5\b \cf0 \
+\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 Appendix A3 - BIDS/OpenNeuro \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 Here is a minimal tasklist and user script for analysis of dataset ds000102 from OpenNeuro. Note the use of 
+\f2 aas_processBIDS
+\f1  for input. BIDS input will automatically creates events to be used in the GLM (consult the JSON and CSV metadata files in the dataset for more information). However, it is still necessary to define model contrasts, as is shown here.\
+\
+The tasklist also demonstrates a branched analysis and the use of selected_sessions to restrict modeling in each section to data from one session. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0\fs36 \cf0 \ul Userscript\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 \ulnone \
+% ---------------------------------------------------------------------------------\
+% init\
+% ---------------------------------------------------------------------------------\
+\
+clear all;\
+aa_ver5;\
+\
+aap = aarecipe('/Users/peellelab/aap_parameters_WUSTL.xml','ds000102.xml'); \
+\
+% aap = aas_configforSPM12(aap); % removed in current aa version\
+\
+% ---------------------------------------------------------------------------------\
+% FSL path hack\
+% ---------------------------------------------------------------------------------\
+\
+FSL_binaryDirectory = '/usr/local/fsl/bin'; \
+currentPath = getenv('PATH');\
+if isempty(strfind(currentPath,FSL_binaryDirectory))\
+    correctedPath = [ currentPath ':' FSL_binaryDirectory ];\
+    setenv('PATH', correctedPath);\
+end\
+\
+% ---------------------------------------------------------------------------------\
+% paths and defaults\
+% ---------------------------------------------------------------------------------\
+\
+aap.acq_details.root = 'PATH/to/TOPLEVEL';\
+aap.directory_conventions.analysisid = 'ANALYSISID';\
+aap.directory_conventions.rawdatadir = 'PATH/TO/TOP/LEVEL/OF/DATA';\
+\
+aap.options.autoidentifystructural_choosefirst = 1;\
+aap.options.autoidentifystructural_chooselast = 0;\
+aap.options.NIFTI4D = 1;\
+aap.tasksettings.aamod_smooth.FWHM = 9;\
+\
+aap = aas_processBIDS(aap); 	% processBIDS must come before addcontrast\
+\
+% ----------------------------------------------------------------------------------------------------------------------\
+% contrasts\
+% ----------------------------------------------------------------------------------------------------------------------\
+\
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [1 0], 'congruent_correct', 'T');\
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [0 1], 'incongruent_correct', 'T');\
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [-1 1], 'IC_G_CC', 'T');\
+\
+% ---------------------------------------------------------------------------------\
+% RUN\
+% ---------------------------------------------------------------------------------\
+	   \
+aa_doprocessing(aap);\
+aa_close(aap);\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0\fs36 \cf0 \ul Tasklist (ds000102.xml)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f5\b\fs32 \cf0 \ulnone \
+\
+<?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+    <tasklist>\
+        <initialisation>\
+			\
+			<module><name>aamod_study_init</name></module>\
+\
+        </initialisation>\
+		\
+        <main>\
+			\
+			<module><name>aamod_structuralfromnifti</name></module>\
+			<module><name>aamod_reorienttomiddle_structural</name></module>\
+			<module><name>aamod_epifromnifti</name></module>\
+			<module><name>aamod_reorienttomiddle_epi</name></module>\
+			\
+			<module><name>aamod_realign</name></module>  \
+			<module><name>aamod_coreg_extended</name></module>\
+			<module><name>aamod_segment8_multichan</name></module>\
+			<module><name>aamod_norm_write</name></module>\
+			<module><name>aamod_smooth</name></module>\
+					\
+			<module>\
+				\
+				<branch>\
+					<selected_sessions>Flanker_run-1</selected_sessions>\
+					<module><name>aamod_firstlevel_model</name></module>\
+					<module><name>aamod_firstlevel_contrasts</name></module>\
+					<module><name>aamod_firstlevel_threshold</name></module>\
+				</branch>\
+				\
+				<branch>\
+					<selected_sessions>Flanker_run-2</selected_sessions>\
+ 					<module><name>aamod_firstlevel_model</name></module>\
+					<module><name>aamod_firstlevel_contrasts</name></module>\
+					<module><name>aamod_firstlevel_threshold</name></module>\
+				</branch>	\
+								\
+			</module>\
+	\
+        </main>\
+    </tasklist>\
+</aap>\
+\
+}

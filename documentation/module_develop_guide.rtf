@@ -1,0 +1,1884 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;\f2\fmodern\fcharset0 Courier-Oblique;
+\f3\fmodern\fcharset0 Courier-Bold;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww26060\viewh25780\viewkind1
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\f0\b\fs20 \cf0 Automatic Analysis: Introduction to Custom Module Development\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 The automatic analysis (aa) toolkit can be extended by creating modules that implement custom functionality. Module creation is not difficult, but the process is not well documented in the aa distribution. The purpose of this document is to describe module creation in detail so that users may more easily implement their own custom analysis tools should the need arise. The coverage is not comprehensive; rather, the goal is to explain the coding practices and options that are most commonly used. \
+\
+Before creating a new module, you should thoroughly review the current contents of the aa distribution, as replication of functionality should be kept to a minimum. Analysis modules are located in the 
+\f1 aa_modules
+\f0  directory. Useful utilities may also be found in the 
+\f1 aa_toolbox
+\f0 , 
+\f1 external
+\f0 , and 
+\f1 extrafunctions
+\f0  directories.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \ul \ulc0 Terminology\ulnone : In this document, the code you create to implement new functionality (typically an mfile/xml header pair) will be called the 
+\i module
+\i0 . The term 
+\i script
+\i0  (or 
+\i user script
+\i0 ) will refer to the mfile created by an end user which makes use of your new module (as well as other modules ) in an analysis. The xml file created by the user (technically, the modules listed therein) is called the 
+\i tasklist
+\i0 .\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 1. The aa Module
+\b0 \
+\
+An aa module consists of two files: 1) a Matlab mfile and 2) an associated xml header. These have the same name, but a different extension (.m and .xml, respectively). Occasionally, a new module is implemented by reusing an existing mfile in the distribution and creating a new header for it (see the 
+\f1 mfile_alias
+\f0  attribute described in Section 1.2). However, you will usually create both. The files should be placed in the 
+\f1 aa_modules
+\f0  directory of the aa distribution. If you wish to make your module available to the aa user base, it can be uploaded to GitHub distribution. Contact a member of the aa development team for additional information. \
+\
+Your module is not called directly from a user\'92s mfile script. Rather, a user accesses your module\'92s functionality by including its name in their analysis tasklist. The 
+\i aa engine
+\i0  is responsible for parsing the tasklist, and locating and calling the mfile function associated with each module listed in the tasklist, in the proper sequence and with the proper input arguments. This arrangement introduces coding practices peculiar to aa development. To explain these, it\'92s necessary to introduce the module 
+\i domain
+\i0 , the 
+\i module working directory,
+\i0  and the concept of 
+\i streams
+\i0 .\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 The Module Domain\
+
+\i0 \
+Each module must declare an 
+\i analysis domain
+\i0  in its xml header. This is specified using the 
+\f1 domain
+\f0  attribute for the 
+\f1 currentlist
+\f0  tag (see Section 1.2). Although about a dozen custom domains are currently defined in the aa distribution, most modules will use a domain of 
+\f1 study
+\f0 , 
+\f1 subject
+\f0 , or 
+\f1 session
+\f0 . There are important differences in calling convention and the data passed to a module defined each of these domains. Generally speaking, a 
+\i subject
+\i0  domain is used for modules that process only structural data, and either 
+\i subject
+\i0  or 
+\i session
+\i0  can be used in modules that process functional data. During an analysis run, a subject domain module will be called once 
+\i per subject
+\i0  (defined in the user script using 
+\f1 aas_addsubject
+\f0 ). A session domain module will be called once 
+\i per session per subject
+\i0  (defined using 
+\f1 aas_addsession
+\f0 ). Modules with a domain of 
+\f1 study
+\f0  will be called exactly once, and typically implement second-level statistics.\
+\
+Conceptually, think of each subject as having only one structural scan but as many functional scans as there are protocols included in the study. Each of these functional scans is one session. This distinction will be reflected in the  contents of the module working directory, which will contain one subdirectory (typically called \'93structural\'94) holding all of the structural data files (if any), and a number of subdirectories containing functional data, one for each defined session (if any). The contents of these directories can be a single 3D (structural) file, a series of 3D or one 4D nifti file (epi), or a collection of DICOM files. Note aa will attempt to read the old Analyze .img/.hdr file format, but this functionality is buggy overall.\
+\
+
+\i The Module Working Directory
+\i0 \
+\
+During an analysis, aa generates a rather extensive directory tree which it uses to distribute files used/created by modules listed in the tasklist. We will refer to the directory (and all subdirectories) containing files related to a given module as the 
+\i module working directory
+\i0  (MWD). The aa toolkit provides a suite of functions used for reading and writing files in your module\'92s working directory. These functions are described in a later section.\
+\
+
+\i Streams
+\i0 \
+\
+Most file interaction in aa is handled using a data abstraction called a 
+\i stream
+\i0 .  A stream name is a short self-explanatory string you define in the xml header (e.g., 
+\i structural
+\i0 , 
+\i epi
+\i0 , 
+\i meanepi
+\i0 , 
+\i ROI
+\i0 , 
+\i firstlevel_betas
+\i0 ) which provides a convenient alias you use in the module mfile code instead of files names. The aa engine handles the details of managing the file(s) that are associated with a given stream.\
+\
+There are two primary stream types: input and output. These are listed in the 
+\f1 outputstream
+\f0  and 
+\f1 inputstream
+\f0  sections of the xml header (see Section 1.2) \'97 usually at least one of each are defined in a module. The input stream(s) are generated by a previous module in the tasklist and supplies data your module requires. The output stream(s) created by your module supply data to module(s) appearing later in the tasklist. \
+\
+We now describe the organization of the module mfile and xml header.\
+
+\i \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i0\b \cf0 1.1 The Module mfile\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 \
+The module mfile is a standard Matlab function with features customized for aa. The overall structure is as follows: \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\fs18 \cf0 function [aap, resp] = aamod_mymodule(aap, task, subject_index, session_index)\
+\
+	switch task\
+		case \'91domain\'92\
+			< case \'91domain\'92 code goes here >\
+		case \'91whentorun\'92\
+			< case \'91whentorun\'92 code goes here >\
+		case \'91description\'92\
+			< case \'91description\'92 code goes here >\
+		case \'91summary\'92\
+			< case \'91summary\'92 code goes here >\
+		case \'91report\'92\
+			< case \'91report\'92 code goes here >\
+		case \'91doit\'92\
+			< case \'91doit\'92 code goes here >\
+		case \'91checkrequirements\'92\
+			< case \'91checkrequirements\'92 code goes here >\
+		otherwise\
+			< error code goes here >\
+	end\
+end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0 \
+By convention, the module name should begin with the prefix 
+\f1 aamod_
+\f0  (the file name must be the same as the function name). The function must take four input parameters: the 
+\f1 aap
+\f0  structure, the current task, the current subject index, and the current session index. Depending on your module domain, some of these variables may be undefined when your function is called.\
+\
+A subject domain module will be passed a valid subject index when invoked. This is an integer indexing of the subjects in the order they were defined and can be used to locate and read subject data (described in the next section). A session domain module will be passed a subject index and a session index, the latter is an integer indexing the subject\'92s session(s) in the order added. These are also used to locate and read data. The session index is undefined if your module\'92s domain is specified as 
+\f1 subject
+\f0  and neither the subject nor session index is defined in a 
+\f1 study
+\f0  domain module. Any attempt to access an undefined variable in your module will cause aa to crash.\
+\
+The module should return the aap structure and a response string (
+\f1 resp
+\f0 ). REQUIRES CLARIFICATION: It\'92s unclear how the latter is used; many aa modules in the current distribution just return an empty string.\
+\
+The module is organized around a 
+\f1 switch
+\f0  construct. A complete and proper aa module implements seven cases:\
+\
+	
+\f1 domain
+\f0 \
+		the domain specifier. Currently, it appears that aa ignores this, and instead \
+		uses the domain specified in the xml header.\
+\
+	
+\f1 whentorun
+\f0 \
+		REQUIRES CLARIFICATION. This case is currently only defined in two modules \
+		(
+\f1 imcalc
+\f0  and 
+\f1 tsdiffana
+\f0 ). Its purpose remains unclear.\
+\
+	
+\f1 description
+\f0 \
+		a terse description of functionality implemented by the module. aa seems to ignore this.\
+		in favor of the \'91desc\'94 entry in the header, which gets printed to the command window\
+		when the module is invoked.\
+\
+	
+\f1 summary
+\f0 \
+		a verbose description of functionality implemented by the module.\
+\
+	
+\f1 report
+\f0 \
+		implements functionality (if any) specific to report generation.\
+\
+	
+\f1 doit
+\f0 \
+		the primary analysis code goes here.\
+\
+	
+\f1 checkrequirements
+\f0 \
+		REQUIRES CLARIFICATION: This case is left empty in most modules. \
+		Its purpose remains unclear.\
+\
+\
+Many modules in the current aa distribution only implement the analysis section (case 
+\f1 doit
+\f0 ) and leave some or most  of the other cases as empty placeholders. The aa engine appears to give preference to the value of these parameters if they are defined in the xml header. Note 
+\f1 domain
+\f0  and 
+\f1 description
+\f0  must be specified in the module\'92s header file regardless of whether they appear in the mfile or aa will crash .\
+
+\i \
+The 
+\f1\i0 doit
+\f0\i  Case
+\i0 \
+\
+The bulk of the module coding effort goes into the 
+\f1 doit
+\f0  case. The code here is structured as follows:\
+\
+	1) extract data from one or more input streams\
+	2) process the data\
+	3a) write results to one or more output files and associate those files with an output stream\
+	3b) (optional) save graphical results to a file\
+\
+We now consider each of these tasks in turn.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 \ul Extracting Data from an Input Stream
+\i0 \ulnone \
+\
+Extracting input stream data is a two-step process: 1) get the stream name, then 2) get the filenames(s) associated with the stream name. Generally, speaking, there are three options for getting the stream name: 1) using 
+\f1 aas_getstreams
+\f0 , 2) using the 
+\f1 currentask
+\f0  field in the aap structure passed to your module, or 3) hardcoding the stream name as a literal string. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 Method #1: Use aas_getstreams
+\i0\b \
+
+\b0 \
+The function aas_getstreams takes a stream type (which is almost always either \'91input\'92 or \'91output\'92) and returns a cell array of stream names defined in the xml header for that type. This will be made clearer by considering a few examples. \
+\
+Example 1: Extract all input streams for a module (i.e., all streams defined in the 
+\f1 inputstream
+\f0  section in the xml header):\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	inputStreams = aas_getstreams(aap,'input');\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example 2: Extract all output streams for the module:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0  
+\f1 	outputStreams = aas_getstreams(aap,\'92output\'92);\
+\
+
+\f0 If multiple streams are defined for the specified stream type, access them individually using standard cell indexing:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+      streams = aas_getstreams(aap,\'92input\'92); \
+      firstStream = streams\{1\};\
+      secondStream = streams\{2\};\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+\
+
+\i Method #2: Use the currenttask field in aap\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The second method for obtaining stream names is to extract them from the aap structure passed to your module. Drilling down through the various levels in the aap structure gives you access to different stream information. At the lowest level, the information is stored as a 
+\i stream struct
+\i0  \'97 a Matlab structure with fields CONTENT and ATTRIBUTE. The name of the stream is in the CONTENT field, and the ATTRIBUTE field contains additional information such as if the stream is renameable. If the stream has no attributes, as string (containing the name) rather than a struct is returned.\
+\
+Example 1: Extract all input streams defined in the header\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	istreams = aap.tasklist.currenttask.settings.inputstreams;\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example 2:  Extract all output streams\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	ostreams = aap.tasklist.currenttask.settings.outputstreams;\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example 3: Extract the first input stream\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	s1 = aap.tasklist.currenttask.settings.inputstreams(1).stream;\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example 4: Extract the first input stream struct\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	s1 = aap.tasklist.currenttask.settings.inputstreams(1).stream\{1\};\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+Example 5: Extract the first input stream name\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	s1 = aap.tasklist.currenttask.settings.inputstreams(1).stream\{1\};\
+	stream_name = s1.CONTENT;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+\
+
+\i Method #3: Hardcode the stream name\
+
+\i0 \
+Finally, you may simply hardcode the name of streams in your module code as they appear in the xml header (an example is included in the next section). This is the simplest approach, but it makes your module less flexible. Specifically, retrieving a stream name using 
+\f1 aas_getstream
+\f0  or the aap struct allows the stream to be 
+\i renameable
+\i0 . For example, 
+\f1 aamod_histogram
+\f0  constructs a voxel histogram of the input stream. However, it\'92s impossible to know the stream of interest in advance \'97 t1, t2, epi, or some other image data. As such, a generic input stream (simply called \'91input\'92) is defined in 
+\f1 aamod_histogram.xml
+\f0  and tagged as renameable. The user assigns this stream to the data of interest using 
+\f1 aas_renamestream
+\f0  in their analysis script. The code in 
+\f1 aamod_histogram.m
+\f0  extracts the stream from the passed aap struct, which aa has initialized to the assigned name and so the module is able to operate on whatever data the user specifies.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 \ul Reading the File associated with the Stream\ulnone \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i0 \cf0 Once a stream has been retrieved, the aa toolkit provides functions for locating the file(s) associated with the stream. Two will suffice for most applications: 
+\f1 aas_getfiles_bystream
+\f0  and 
+\f1 aas_getimages_bystream
+\f0 . These functions take a stream-name or a stream-struct and return the full paths of the file(s) associated with the stream. These can then be passed to Matlab functions such as 
+\f1 load
+\f0  or 
+\f1 fopen
+\f0 , or SPM functions such as 
+\f1 spm_vol
+\f0  to read the file contents. \
+\
+It is recommended 
+\f1 aas_getimages_bystream
+\f0  be used for reading functional data (i.e., \'93epi\'94 streams) and 
+\f1 aas_getfiles_bystream
+\f0   be used for all other stream types. As such, the code examples shown below only pass a subject index to 
+\f1 aas_getfiles_bystream
+\f0 , although the function will accept a both a subject and session index (recall the earlier discussion of 
+\i subject
+\i0  versus 
+\i session
+\i0  module domain). You may come across examples of this usage in the distribution. \
+\
+
+\i Using 
+\f1\i0 aas_getfiles_bystream
+\f0\i  
+\i0 \
+\
+The function 
+\f1 aas_getfiles_bystream
+\f0  offers a great deal of flexibility in the input parameters it can accept. To avoid confusion, we\'92ll consider only the following usage:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	   filename = aas_getfiles_bystream(aap, subject_index, stream_name);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+The function returns one or more filenames which can then be passed to a Matlab or SPM function to read the file contents. Here are three examples taken from the current distribution:\
+\
+Example #1: Using 
+\f1 aas_getstreams
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	streams = aas_getstreams(aap,'input');\
+	img = aas_getfiles_bystream(aap, subjind, streams\{1\});\
+	V = spm_vol(img);\
+	Y = spm_read_vols(V);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example #2: Using the 
+\f1 currenttask
+\f0  field\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0         \
+	% from: aamod_mask_fromstruct.m (note aamod_mask_fromstruct.xml\
+	% defines two input streams: \'91structural\'92 and \'91segmentation\'92)\
+\
+	inStreams = aap.tasklist.currenttask.inputstreams;\
+	Simg = aas_getfiles_bystream(aap,subj,inStreams.stream\{1\});\
+	SEGimg = aas_getfiles_bystream(aap,subj,inStreams.stream\{2\});\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Example #3: Using a hardcoded stream name\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	spmName = aas_getfiles_bystream(aap, subjInd, 'firstlevel_spm');\
+	load(spmName);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 Note you can also pass 
+\f1 aas_getfiles_bystream
+\f0  a stream 
+\i structure
+\i0  rather than a stream name:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	filename = aas_getfiles_bystream(aap, subject_index, stream_struct);
+\f0 \
+
+\f1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The value returned (a filename or list of filenames) is the same as when passing in a stream name.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\i \cf0 Using 
+\f1\i0 aas_getimages_bystream
+\f0\i \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The syntax of 
+\f1 aas_getimages_bystream
+\f0  is similar to 
+\f1 aas_getfiles_bystream
+\f0 , the difference being the addition of a session index. We\'92ll consider only the following calling syntax:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0    filename = aas_getimages_bystream(aap, subject_index, session_index, stream_name);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+The function returns one or more file paths. The stream name is almost always 
+\f1 epi
+\f0  but can also be an epi-related stream such as 
+\f1 epi_dicom_header
+\f0 . Here\'92s an example from 
+\f1 aamod_movie.m 
+\f0 (i and j are the subject index and session index passed to the mfile):\
+\
+	
+\f1 imgs = aas_getimages_bystream(aap,i,j,'epi');\
+	V = spm_vol(imgs);\
+
+\f0 \
+\
+Note \'93images\'94 here is a generic term \'97 it does 
+\i not
+\i0  refer to reading the old Analyze .img file format.\
+\
+
+\i A Note on Multi-file Streams\
+
+\i0 \
+If a stream comprises multiple files (e.g., 3D epi), the functions 
+\f1 aas_getimages_bystream and aas_getimages_bystream 
+\f0 will return the file pathnames in a character array (each row is the full path of one file). As Matlab character arrays cannot have variable row lengths, the entries in the array will be padded if necessary. This trailing whitespace can confuse other functions, an so it is typically removed using deblank( ) when (or before) using the pathnames elsewhere. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 \ul Data Processing
+\i0 \ulnone \
+\
+Once you have identified the filename(s) associated with a given stream, you are free to read these files and process the data using any valid Matlab code, including SPM or other installed toolbox functionality (at minimum, your code will probably make calls to 
+\f1 spm_vol
+\f0  to read the data). \
+\
+
+\i \ul \page Output
+\i0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \ulnone \
+Two types of output can be generated by your module: 1) one or more output streams and 2) graphical results which are usually included in the 
+\i aa report.
+\i0 \
+\ul \
+
+\i \ulnone Output Streams
+\i0 \
+\
+An output stream is created by 1) defining an output stream in the header, 2) saving the data associated with the stream to a file in the module working directory, and 3) associate the file with the output stream. The last step is done by 
+\i describing
+\i0  the file using 
+\f1 aas_desc_output
+\f0 . This generates a unique identifier aa will use to make your output stream available to other modules that list it an input stream (here, \'93describe\'94 should be interpreted in the sense of \'93designate\'94 or \'93label\'94 \'97 it does not involve a literal description of the file).\
+\
+The function 
+\f1 aas_desc_output 
+\f0 will accept a variety of input parameters, which can be rather confusing. The basic syntax is as follows:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	aap = aas_desc_outputs(aap, domain, indices, streamname, filename);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0  \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 here,
+\f0  
+\f1 domain
+\f0  is the domain of your module, 
+\f1 streamname
+\f0  is a string containing the name of the output stream as defined in the xml header, and 
+\f1 filename
+\f0  is the name of the output file to  be associated with the stream. If 
+\f1 domain
+\f0  is 
+\i subject
+\i0 , then 
+\f1 indices
+\f0  is a scalar equal to the subject index (if the subject index is 1, this can be omitted). If 
+\f1 domain
+\f0  is 
+\i session
+\i0 , then 
+\f1 indices
+\f0  is a vector 
+\f1 [subject_index session_index]
+\f0 . If domain is study, the indices are omitted. Some existing code uses an old syntax in which 
+\f1 domain
+\f0  is omitted or which passes separate subject and session indices rather than a vector. Here\'92s a few example calls taken from the current distribution:\
+\
+From 
+\f1 aamod_convert_epis.m
+\f0  (complete parameter set):\
+
+\f1 \
+	spm_write_vol(V,Ymean);\
+	aap = aas_desc_outputs(aap, domain, indices,'epi_mean', V.fname);\
+  \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 From 
+\f1 aamod_structuralstats.m
+\f0  (note 
+\f1 domain
+\f0  is omitted):\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	outfile = fullfile(fileparts(img), 'structuralstats.mat');\
+	save(outfile,'S'); % \'92S\'92 is created earlier in the code\
+	aap = aas_desc_outputs(aap, subjind, 'structuralstats', outfile);
+\f0 \
+\
+From 
+\f1 aamod_convert_fieldmaps.m
+\f0  (note 
+\f1 domain
+\f0  is omitted, and subject and session are passed separately)\
+
+\f1 \
+	dcmhdrfn=fullfile(sesspath,'fieldmap_dicom_header.mat');\
+	save(dcmhdrfn,'dcmhdr');\
+ 	aap=aas_desc_outputs(aap, subj, sess,'fieldmap_dicom_header',dcmhdrfn);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 From 
+\f1 aamod_secondlevel_threshold.m
+\f0  (note 
+\f1 domain
+\f0  and 
+\f1 indices
+\f0  are omitted):\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	Outputs.thr = strvcat(Outputs.thr, V.fname);\
+	aap = aas_desc_outputs(aap,'secondlevel_thr', Outputs.thr);
+\f0 \
+\
+\
+An easy point of confusion is that it is possible to associate more than one file with a stream. This is done by passing a (vertically concatenated) list of file names to aas_desc_outputs instead of a single file name. For example, aamod_norm_noss associates two files with the 
+\i structural
+\i0  output stream using the following code:\
+\
+   
+\f1 aap=aas_desc_outputs(aap,domain,indices,'structural\'92,strvcat(Simg,Sout));\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The variables 
+\f1 Simg
+\f0  and 
+\f1 Sout
+\f0  are paths to the raw and bias corrected structural image. The former was input to the module, the latter was generated during module execution.\
+\
+A more elaborate example is provided by the definition of the segmentation output stream, also in 
+\f1 aamod_norm_noss
+\f0 . Filenames for the native and normalized grey, white, and CSV segmentations (c1*, c2*, c3*, wc1* wc2*, and wc3*, in SPM parlance) are concatenated using a for loop, then the six files are associated with a single 
+\i segmentation
+\i0  output stream:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0   while ~isnan(d)\
+    d = d+1;\
+    if exist(fullfile(Spth,sprintf('c%d%s',d,['m' Sfn Sext])), 'file')\
+     outSeg=strvcat(outSeg,fullfile(Spth,sprintf('c%d%s',d,['m'Sfn Sext])));\
+     outSeg=strvcat(outSeg,fullfile(Spth,sprintf('wc%d%s',d,['m'Sfn Sext])));\
+    else\
+     d = NaN;\
+    end\
+  end\
+	\
+  aap = aas_desc_outputs(aap, domain, indices,'segmentation', outSeg);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 These examples also nicely illustrate the bookkeeping scheme used by the aa for stream management. Following execution of 
+\f1 aamod_norm_noss
+\f0 , a plaintext file is generated in the module working directory named 
+\f1 stream_structural_outputfrom_aamod_norm_noss
+\f0 . The contents of this file consists of an MD5 header followed by two relative paths pointing to the raw and bias-corrected structural files. Similarly, the contents of stream_segmentation_outputfrom_norm_noss are relative paths pointing to the six tissue segmentation files. The streamname is parsed from the text file name by the aa scheduler, which it will then translate into the literal file paths for you as the need arises (for example, by a call to 
+\f1 aas_getfiles_bystream
+\f0  in a subsequent module). In this way, your code need not deal with the details of file naming, including the transformation of filenames generated by SPM over the course of processing, but rather need only deal with a single immutable stream name.
+\f1 \
+\
+\
+
+\f0\i Graphical Results\ul \
+
+\i0 \ulnone \
+Graphical results are generated in a module usually for the purpose for including them in the analysis report (the report file is generated by a call to 
+\f1 aa_report
+\f0  in the user script). It appears to be standard practice to generate graphical results during analysis (i.e., the 
+\f1 doit
+\f0  case) which are saved to disk. These results will then exist in the module working directory even if the user does not choose to generate a report.\
+\
+
+\i Locating a Module\'92s Working Directory\
+
+\i0 \
+As a rule, a module should save any files it creates in the module working directory or in a subdirectory created under it. This will be 
+\f1 <root>/<analysisid>/
+\f2\i current-analysis-stage
+\f0  
+\i0 for study-level modules, 
+\f1 <root>/<analysisid>/
+\f2\i current-analysis-stage/current-subject-name
+\f0  
+\i0 for subject modules, or 
+\f1 <root>/<analysisid>/
+\f2\i current-analysis-stage/current-subject-name/current-session-name 
+\f0\i0 for session modules. Here, 
+\f1 <root>
+\f0  is the directory specified by the user script in 
+\f1 aap.acq_details.root
+\f0  and 
+\f1 <analysisid>
+\f0  is the subdirectory under root specified in 
+\f1 aap.directory_conventions.analysisid
+\f0 .\
+\
+There are several aa utility functions available to help you identify the module working directory. Here\'92s an annotated list of such functions currently in use in the aa distribution:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getsubjpath(aap, subject_index)
+\f0 \
+\
+This will return the MWD (e.g., 
+\f1 <root>/<analysisid>/aamod_mymodule_00001/<current_subject_name>
+\f0 ) for your module. You can pass a third argument to get the MWD for a previous stage. For example:\
+\
+	
+\f1 path = aas_getsubjpath(aap, subject_index, 1) 
+\f0 \
+\
+will return 
+\f1 <root>/<analysisid>/aamod_autoidentifyseries_timtrio_00001/<current-subject-name>
+\f0 , assuming the first stage of your analysis script was 
+\f1 autoidentifyseries_timetrio
+\f0 . The index ignores the modules specified in the 
+\f1 initialisation
+\f0  block of the header.\
+\
+
+\f1 	path = aas_getsesspath(aap, subject_index, session_index);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+will return the MWD for a domain subject module (e.g., 
+\f1 <root>/<analysisid>/aamod_mymodule_00001/<current_subject_name>/<current_session_name
+\f0 ). This will also work for a subject domain module by setting 
+\f1 session_index
+\f0  equal to 1 (remember the session index passed to your module will only be defined if the domain of the module is declared as session in the xml header). That being said, if your module is domain subject, it\'92s probably best to use 
+\f1 aas_getsubjpath
+\f0  instead.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getpath_bydomain(aap, domain, [ indices ] )\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+This is the most general directory utility, and will work with any domain type module. Common usage include:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getpath_bydomain(aap, \'91subject\'92, 4)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+which would return the MWD for the fourth subject in a subject domain module.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getpath_bydomain(aap, \'91session\'92, [2 3])\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+which returns the MWD for the third session of the second subject in a session domain module. In general, we have:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getpath_bydomain(aap, domain, [ indices ], module_index)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+where 
+\f1 module_index
+\f0  can be used to specify a previous analysis stage module, and the content of 
+\f1 indices
+\f0  must be appropriate for the domain specified (see the distribution for use of domains other than 
+\f1 session
+\f0  or 
+\f1 subject
+\f0 ). Note the domain of your module is stored in the variable 
+\f1 aap.tasklist.currenttask.domain.
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 You can also obtain the path to the current module directory using 
+\f1 getstudypath
+\f0 :\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	path = aas_getstudypath(aap);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+This returns the variable defined in 
+\f1 aap.acq_details.root.\
+\
+
+\f0 Finally, two additional utility functions are useful when working with session modules:
+\f1 \
+\
+	session_name = aas_getsessname(aap, session_index)\
+
+\f0 \
+returns the session name (i.e., the string specified in 
+\f1 aas_addsession
+\f0  ) for the specified session_index. \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	session_description=aas_getsessdesc(aap, subject_index, session_index);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+returns a description of the current session including the subject and analysis modality (e.g., \'91MRI\'92). This is handy for  figure captions and log files.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\i \cf0 Output File Naming Conventions\
+
+\i0 \
+There currently appears to be no standardized naming convention for image files. Some modules create a \'93diagnostics\'94 subdirectory in the module working directory and place graphics files there. Other modules simply place graphics files in the working directory and prefix filenames with the identifier \'93diagnostics_\'94. Some extant modules use a combination of both approaches. For example, 
+\f1 aamod_realign
+\f0  saves plots of the rigid body corrections generated by SPM in a diagnostics subdirectory using the file prefix \'93
+\f1 aamod_realign_
+\f0 \'94. It also saves a plot of summary statistics in the 
+\f1 aamod_realign
+\f0  analysis directory using the prefix \'93diagnostic_\'94. \
+\
+In the long term, we should enforce a consistent naming convention across the aa distribution. However, any convention will work in your module as long as you use it consistently in the 
+\f1 doit
+\f0  and 
+\f1 report
+\f0  code sections. The only aa module that needs to locate your module\'92s graphical results is aa_report, and you control that internally (cf. the 
+\f1 report
+\f0  case). All that is required is the code in the 
+\f1 report
+\f0  case that reads the results for report generation is consistent with the code in the 
+\f1 doit
+\f0  case that wrote them.\
+\
+Should you decide to use the first approach mentioned above, aa provides a convenience function to create a \'93diagnostics\'94 subdirectory in the current analysis directory:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	subjectName = aas_prepare_diagnostic(aap, subjectIndex); \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\i \cf0 \
+
+\i0 The function will check if a \'93diagnostics\'94 directory already exists before attempting to create one, so you need not worry about overwriting any previously created files. It returns a string containing the name that was assigned to the subject in 
+\f1 aas_addsubject
+\f0 .\
+\
+Should you instead choose the second approach, you simply need to prepend \'91diagnostic_\'92 to the names of any files you create. There is some merit to this, in that it will simplify the task of identifying all diagnostic images generated by aa in a given analysis directory tree for other kinds of postprocessing (e.g, as might be done via shell script using 
+\f1 find
+\f0 ). \
+\
+
+\i \
+Generating and Saving Graphical Results\
+\
+
+\i0 You can generate necessary graphical results using any Matlab functionality, including that provided by a third-party toolbox such as SPM or FSL (e.g., 
+\f1 spm_figure
+\f0  or 
+\f1 spm_orthviews
+\f0  or 
+\f1 spm_render
+\f0 ). The aa engine also provides a few functions (e.g., 
+\f1 aas_checkreg, aas_realign_graph
+\f0 ) that generate graphical results that can be included in a report. Once the graphics are displayed, there are a number of options available to save the figure contents to a file. The preferred format appears to be a 150 dpi resolution jpeg. This file can be generated using the Matlab 
+\f1 print
+\f0  command. You may want to optimize the rendering technique before calling print. Here is an example from 
+\f1 aamod_listspikes
+\f0 . The code plots results in a window created by a 
+\f1 figure(2)
+\f0  call (aa modules use figure 2 because figure 1 is reserved for the SPM graphics window); the window contents are then saved as follows:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	set(2,'Renderer','zbuffer');\
+	print(2,'-djpeg','-r150',fullfile(aap.acq_details.root,'diagnostics', \'85\
+			[mfilename '__' subjname '.jpeg']));\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+(Note there are minor two errors here. First, the correct file extension should be \'93.jpg\'94 not \'93.jpeg\'94. Second, 
+\f1 zbuffer
+\f0  rendering is depreciated in the current release of Matlab. Use 
+\f1 opengl
+\f0  or 
+\f1 painters
+\f0  instead. The 
+\f1 painters
+\f0  renderer draws using vector graphics (slower, better quality); 
+\f1 opengl
+\f0  draws using raster graphics (faster, lower quality). For most figures you probably won\'92t notice a difference.)\
+\
+If you omit the figure handle in the call to 
+\f1 print
+\f0 , the current figure will be printed (which should be the intended figure assuming it was the last figure created). Note 
+\f1 print
+\f0  is notorious for altering content (aspect ratio, line weights, etc) when saving a figure to file. Text is especially problematic. Calling:\
+\
+	
+\f1 set(findall(gcf,'Type','text'),'FontUnits','normalized\'92)
+\f0 ;\
+\
+in your code immediately before the 
+\f1 print
+\f0  command will permit font scaling, which can improve text appearance when graphics are saved to a file.\
+\
+If you attempt to generate graphics in the SPM graphics window and the window is not currently open, the result will likely be an empty jpeg. You can force SPM to open the graphics window (and create it if it does not exist) by calling spm_figure:\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf0          
+\fs24 \
+
+\fs20         h = spm_figure('GetWin', 'Graphics');
+\fs24 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0 \
+You should close a figure once the contents have been saved. This can be done by passing the figure handle to the Matlab 
+\f1 close
+\f0  function. You can do something like this:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	< generate and save SPM graphics here >\
+	close(h);\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 REQUIRES CLARIFICATION: Closing the SPM Graphics window may prevent other modules from creating graphical results (if they don\'92t check that the window has been closed). It may be safer to not close the window.\
+\
+
+\i Adding Graphical Results to the Report\
+\
+
+\i0 The aa report is a standard html file. There are two functions for adding content to it: 
+\f1 aas_report_add
+\f0  and 
+\f1 aas_report_addimage
+\f0 . Both of these functions take three parameters:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 		aap = aas_report_add(aap, <subject index>, 
+\f2\i html_string
+\f1\i0 );\
+	or\
+		aap = aas_report_add(aap, <section label>, 
+\f2\i html_string
+\f1\i0 );\
+\
+\
+	    aap = aas_report_addimage(aap, <subject index>, 
+\f2\i fullpathtoimage
+\f1\i0 );\
+	or
+\f0 \
+
+\f1 	    aap = aas_report_addimage(aap, <section label>, 
+\f2\i fullpathtoimage
+\f1\i0 );
+\f0 \
+
+\f1 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The second parameter designates the section of the report to which the content should be added. This can be either the subject index (an integer) or a section label (a string). Section labels currently recognized are 
+\i moca
+\i0  (motion correction), 
+\i reg
+\i0  (registration), and 
+\i Cxx
+\i0  (a contrast number). If an empty field [ ] is passed, the contents are added to the main body of the report. \
+\
+The html string passed to 
+\f1 aas_report_add
+\f0  can contain any valid html string, including formatting tags. A common use is to open and close a table when inserting an image into the report. For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\fs18 \cf0 	aap=aas_report_add(aap,subjectIndex,'<table><tr><td>');\
+	sesspath=aas_getsesspath(aap, subjectIndex, sessionIndex);\
+	aap=aas_report_addimage(aap,subjectIndex,fullfile(sesspath,\'92aresult.jpg'));\
+	aap=aas_report_add(aap,subjectIndex,'</td></tr></table>');\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0 \
+This code snippet assumes that the file 
+\f1 someresult.jpg
+\f0  exists in the proper directory (this will have been generated in the 
+\f1 doit
+\f0  section of the same module). Note the image is preceded by a html tags that open a table, a row in the table, and a data cell within the row. The image is then added using 
+\f1 aas_report_addimage,
+\f0  and a second call to 
+\f1 aas_report_add
+\f0  is made which closes the tags in the opposite order. If incorrect html is passed, an error will be generated when attempting to subsequently open the report.\
+\
+These functions may be called as many times as needed. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \
+1.2 The Module xml Header\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 \
+The module xml header file is written using Extensible Markup Language.  The overall structure is as follows:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs18 \cf0 <?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+\
+    <tasklist>\
+\
+	<currenttask domain='subject' desc=\'91helpful description\'92 modality='MRI'>\
+\
+	<permanenceofoutput>2</permanenceofoutput>\
+                        \
+	<!\'97 module parameters and their default values go here \'97>\
+\
+	<param_1 desc=\'91helpful description of param_1\'92>0.111</param_1>\
+	<param_2 desc=\'91helpful description of param_2\'92>0.222</param_2>\
+          \
+	<!\'97 input streams \'97>\
+  \
+	<inputstreams>\
+		<stream>input_stream</stream>\
+		<stream>another_input_stream</stream>\
+		<stream isessential=\'910\'92>an_optional_input_stream</stream>\
+		<stream isrenameable=\'911\'92>a_renameable_input_stream</stream>\
+	</inputstreams>\
+          \
+	<!\'97 output streams \'97>\
+\
+	<outputstreams>\
+		<stream>an_output_stream</stream>\
+		<stream>another_output_stream</stream>\
+		<stream>still_another_output_stream</stream>\
+	</outputstreams>\
+						\
+	</currenttask>\
+\
+    </tasklist> \
+\
+</aap>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0 \
+The 
+\f1 domain
+\f0  and 
+\f1 desc
+\f0  entries in 
+\f1 currenttask
+\f0  are required. Modules typically have one or more input and output streams* as well as optional parameters. The details of each header file are of course task specific. (* currently, aa will crash if any module in a script other than the last has no output streams. This is a bug in the aa internals).\
+\
+It is good programming practice to include a description of parameters defined in the header by utilizing the 
+\f1 desc
+\f0  field in the definition. Although the meaning of a given module parameter is obvious to the module developer, it may be less-so to an end user. Making your code self-documenting helps others to understand the proper use of your module. Parameter naming should always err on the side of clarity; entries like \'93verbose\'94 and \'93provenance\'94 are unhelpful.\
+\
+
+\i currenttask Attributes
+\i0 \
+\
+	
+\f1 domain
+\f0 \
+\
+		\ul This field is required.
+\b \ulnone  
+\b0 The value will probably be either 
+\i subject
+\i0  or 
+\i session.
+\i0 \
+					\
+		A partial list of domain names currently in use in aa distribution include:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 			scan\
+			study\
+			subject\
+			session\
+			isc_session\
+			meg_session\
+			diffusion_session\
+			splitsession_cv_fold\
+			searchlight_package\
+			hyperalignment_subject\
+			splitsession_cv_fold_hyper\
+			diffusion_session_bedpostx\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+	
+\f1 desc
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \
+		
+\b0 \ul This field is required.
+\b \ulnone   
+\b0 A helpful description of the module functionality. 
+\b \
+		
+\b0 This text is displayed in the command window when the module is called by aa.\
+\
+	
+\f1 modality
+\f0 \
+
+\b \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 		aa currently recognizes the modalities \'91MRI\'92 and \'91MEG\'92 \
+		If the modality is not specified, MRI is assumed.\
+\
+\
+	
+\f1 mfile_alias
+\f0 \
+\
+	Existing module functionality can be customized for a new application without the need to change\
+	the mfile code. By default, aa expects to find an mfile having the same name as the .xml file \
+	(but with a \'91.m\'92 extension). This default behavior can be overridden using the
+\f1  mfile_alias
+\f0  tag.\
+
+\i \
+Other Header Content\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\i0 \cf0 	timebase\
+	memorybase
+\f0 \
+\
+		REQUIRES CLARIFICATION: The purpose of these tags is unclear. \
+		They appear to be related to qsub cluster processing.\
+\
+	
+\f1 permanenceofoutput
+\f0 \
+\
+		REQUIRES CLARIFICATION: The purpose of this tag is unclear. \
+		It is used in garbage collection.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\i \cf0 Custom Parameters
+\i0 \
+\
+You may include custom parameters in your xml header simply by including the name of the parameter as a tag. A description and a default value should be included. The advantage of listing these parameters in the header is that the default value can be easily overridden in the user script (see Appendix B). For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	<samp desc='Sampling distance (mm)'>1</samp>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0  	\
+REQUIRES CLARIFICATION: It appears to be possible to restrict values of a parameter by using the 
+\f1 ui
+\f0  tag. Possible variants include 
+\f1 dir
+\f0  (requiring the user specify a directory), 
+\f1 double
+\f0  (i.e., a real number), 
+\f1 text
+\f0  (i.e., a string) or 
+\f1 optionlist
+\f0  (accepted values  are listed explicitly). For example:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+	<resolution options=\'91low|med|high\'92 ui='optionlist'>low</resolution>\
+			\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 The intent here is to restrict values of 
+\f1 resolution
+\f0  to 
+\f1 low, med, 
+\f0 or
+\f1  high
+\f0 . However, it appears to be up to you to implement parameter checking in the module\'92s mfile code; the ui tag alone does not accomplish this automatically. Many modules in the current aa distribution specify parameter restrictions in the xml header which have no effect.\
+\
+You access parameters declared in the header from your module\'92s mfile using:\
+\
+	
+\f1 aap.tasklist.currenttask.settings.parameterName
+\f0 ;\
+		\
+where 
+\f1 parameterName
+\f0  is the string used as the tag for the parameter in the .xml file. You may come across an alternate way to code parameter access using 
+\f1 aap
+\f0 .
+\f1 tasksettings
+\f0  instead of the 
+\f1 tasklist.currenttask
+\f0  field:\
+\
+	
+\f1 aap.tasksettings.(MODULENAME).parameterName
+\f0 ;	% don\'92t do this\
+\
+As explained on the aa website, this approach should be avoided for two reasons. \'85
+\i If there is more than one instance of (modulename) in a tasklist, you won\'92t know which one holds the settings for the current job. Second, aap.tasklist.currenttask can be customised by 
+\f2 extraparameters
+\f0  in the tasklist.
+\i0 \
+\
+In brief, always use 
+\f1 aap.tasklist.currenttask.settings
+\f0  to access parameters defined in your module\'92s header.
+\i \
+\
+Stream Attributes\
+
+\i0 \
+A number of optional attributes can be applied to input and output streams. \
+\
+	
+\f1 isessential
+\f0 \
+\
+	Many processing tasks can take optional input that is useful but not essential for the task at hand. \
+	For example, spatial normalization can be performed using only GM, but SPM provides the option\
+	to use both GM and WM. \
+\
+	To determine whether an optional input stream is available, include the following in your code:\
+		\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 		if aas_stream_has_contents(aap, 
+\f2\i streamname
+\f1\i0 )\
+			< retrieve and process 
+\f2\i streamname
+\f1\i0  >\
+		end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+	Here, 
+\i streamname
+\i0  is the name of a nonessential stream. This is specified setting isessential=0 \
+	in the script tag. For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 			<stream isessential=\'910\'92>t2</stream>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+	Note the 0 value is a string not a Boolean, and so it must be enclosed in quotes. \
+\
+	If the 
+\f1 isessential
+\f0  attribute is omitted, the stream is assumed to be essential. When a\
+	userscript is run, aa analyzes module dependencies and will halt execution with an error\
+	message if it identifies a module having an undefined essential input stream.\
+\
+	Important: A module must define at least one essential input stream, otherwise the aa\
+	scheduling algorithm will crash.\
+\
+	
+\f1 ismodified
+\f0 \
+		\
+		If your module does not modify a given input stream, you should tag the stream\
+		as 
+\i unmodified
+\i0  (i.e., apply the tag 
+\f1 ismodified=\'910\'92
+\f0 ). This will allow aa to create \
+		(hard) link(s) to the file(s) associated with the stream rather than making duplicates, \
+		which can result in substantial disk space savings.\
+\
+	
+\f1 isrenameable
+\f0 \
+\
+		A renameable stream allows you to define a generic stream in your module that\
+		the user can reassign as they see fit (an example is described in Section 1.1). \
+		Although the implementation of a module determines whether a stream is \
+		functionally renameable, aa prevents stream renaming by default. As such, \
+		you must explicitly tag a stream 
+\f1 isrenameable=\'911\'92
+\f0  if you wish to make it\
+		renameable. Note 
+\f1 \'911\'92 
+\f0 is a string, not a Boolean.\
+\
+	
+\f1 diagnostic
+\f0 \
+\
+		This tag indicates the stream is used in reporting. It is not necessary to designate\
+		such steams, however it will prevent garbage collection from deleting it.\
+\
+	
+\f1 forcedomain
+\f0 \
+\
+		REQUIRES CLARIFICATION: The purpose of this tag is unclear.\
+\
+	named streams\
+\
+	According to the aa website, you can request streams from a specific module. For example:\
+\
+ 
+\f1  			<stream><name>aamod_realign.epi</name></stream>\
+
+\f0 \
+	refers to the epi stream generated by 
+\f1 aamod_realign
+\f0  and not the epi stream output created\
+	by any subsequent processing of the epi stream in the user script. This can be useful when\
+	implementing functionality that requires an input stream having a known state.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \
+2.0 Error Handling\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 Proper error handling is critical to improving the accessibility of aa, especially for new users. Your module should check the parameters and data passed to it in as much detail as possible and flag incorrect or suspicious input. At best, failing to do so will cause aa to crash, often at a later analysis stage making it extremely difficult to identify and correct the error. At worst, improper data may generate wrong results with no warning at all. As the module developer, you are in the best position to evaluate the data passed to your module and judge its correctness. Your code should alert the user immediately if usage appears suspect and suggest how best to correct the problem.\
+\
+The programming tool for implementing error handling in aa is 
+\f1 aas_log
+\f0 , which allows your module to print messages to the Matlab command window and optionally halt execution:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	aas_log(aap, flag, message, style);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+The Boolean 
+\f1 flag
+\f0  is true if execution should stop and false otherwise. The Matlab function sprint can be used to include data values and formatting in 
+\f1 message
+\f0  (examples to follow). The optional 
+\f1 style
+\f0  string can be used to specify the formatting of the text.\
+\
+As an example, suppose your module accepts a parameter called 
+\f1 baseline
+\f0 , which will be used to normalize data in a subsequent calculation. If the value is zero, it will eventually cause execution to halt with a divide by zero. Although Matlab will generate an error message when that occurs, it is better to check the value of the parameter in your module and provide a informative message if an improper value is encountered:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	if (baseline == 0)\
+	  aas_log(aap, true, 
+\f0 \'85
+\f1  \
+	 sprintf(\'92\\n%s: Baseline cannot be zero. Exiting.\'92, mfilename), \'91r\'92);\
+	end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+Note 
+\f1 mfilename
+\f0  is a Matlab built-in variable that identifies the m-file in which the error occurred. This can be useful for debugging purposes.\
+\
+If the value of a parameter is not technically wrong but still suspicious, your module can warn the user:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	if (baseline < 0)\
+	  aas_log(aap, false, 
+\f0 \'85
+\f1  \
+	  sprintf(\'92Warning: Negative baseline passed to %s.\'92, mfilename));\
+	end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+Note 
+\f1 false
+\f0  is passed as the error flag so that execution does not halt.\
+\
+Ideally, the error message should include instructions for correcting the problem if the solution is not obvious. For example, suppose your module uses the first covariate for global normalization. If no covariates are specified, the module should generate an error and instruct the user what to do:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	if (total_covariate_count == 0)\
+	  aas_log(aap, true, \'85\
+	  sprintf('\\n%s: You must supply data for global normalization\
+	  (use aas_addcovariate to add as 1st covariate)\\n', mfilename));\
+	end
+\f0 \
+\
+
+\b \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 Checking input to your module is tedious and anticipating all eventualities may not be possible, but including proper error handling in your module will help the user obtain correct analysis results in a timely fashion with the minimal amount of frustration.
+\b \
+\
+3.0 Summary\
+
+\b0 \
+Custom aa module development in allows the end user to add functionality not currently available in the toolkit, or to tailor current functionality to the needs of a specific application. The typical custom module consists of an mfile and an associated xml header. Both of these files should be copied to the 
+\f1 aa_modules
+\f0  subdirectory of the aa installation directory; both files should have the same name (except for extension) and the file names should begin with the prefix 
+\f1 aamod_
+\f0 . The key content of the xml header is the module domain, and the module\'92s input and output streams. The key content of the mfile is the analysis code contained within a doit case branch. The analysis code typically reads data from one or more input streams, processes the data, then writes results to one or more output streams. It may optionally generate graphical or diagnostic results. A 
+\f1 report
+\f0  case will be called at the end of the analysis, which can retrieve output generated by the module and add this content to the aa report using the appropriate html embedding.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \
+\
+\page Appendix A: Simple Example Module\
+\
+XML Header\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs18 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0 \cf0 <?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+    <tasklist>\
+        <currenttask domain='subject' desc=\'91aa example module\'92 modality='MRI'>\
+        \
+            <permanenceofoutput>2</permanenceofoutput>\
+                        			\
+            <thresh desc='threshold'>0.123</thresh>\
+            \
+            <inputstreams>\
+                <stream>structural</stream>	\
+            </inputstreams>\
+          \
+            <outputstreams>\
+                <stream>voxel_histogram</stream>\
+            </outputstreams>\
+			\
+        </currenttask>\
+    </tasklist> \
+</aap>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs20 \cf0 \
+Matlab mfile\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\b0\fs18 \cf0 function [aap,resp] = aamod_TESTMODULE(aap, task, subjectIndex, sessionIndex)\
+%\
+% AAMOD_TESTMODULE -- Test module creation for aa\
+%\
+% [aap,resp] = aamod_TESTMODULE(aap, task, subjectIndex, sessionIndex)\
+%\
+%\
+\
+resp='';\
+\
+switch task\
+	\
+    case 'domain'\
+        resp='subject';\
+		\
+    case 'description'\
+        resp='aamod_TESTMODULE: basic module for testing';\
+		\
+   case 'report'\
+	   		\
+	% add the voxel histogram we created in 'doit' to the report\
+		\
+	voxogram = fullfile(aas_getsubjpath(aap, subjectIndex),'voxogram.jpg');\
+	aap = aas_report_add(aap, subjectIndex, '<table><tr><td>');\
+	aap = aas_report_addimage(aap, subjectIndex, voxogram);\
+	aap = aas_report_add(aap, subjectIndex, '</td></tr></table>');\
+		\
+ 		\
+    case 'doit'\
+        		\
+	% 'thresh' is currently unused -- this just shows how to access a \
+	% parameter defined in the xml file:\
+		\
+	thresh = aap.tasklist.currenttask.settings.thresh;\
+		\
+	inputstreamname = aap.tasklist.currenttask.inputstreams(1).stream\{1\};\
+		\
+	inputImg = aas_getfiles_bystream(aap, subjectIndex, inputstreamname);	\
+	[pth, nm, ext] = fileparts(inputImg);\
+        \
+	V = spm_vol(inputImg);		\
+		\
+	[Y, xyz] = spm_read_vols(V);\
+\
+	% make and save a voxel histogram\
+		
+\f3\b \
+
+\f1\b0 	h = figure;	\
+	temp = histogram(Y);
+\f3\b \
+		
+\f1\b0 \
+	% save histogram figure so we can add it to the report later\
+		\
+	voxogram = fullfile(aas_getsubjpath(aap, subjectIndex),'voxogram.jpg');\
+	set(h,'Renderer','painter');\
+	print(h, '-djpeg', '-r150', voxogram);\
+	close(h);\
+		\
+	% save the histogram data\
+		\
+	S = temp.Data;\
+	outfile = fullfile(fileparts(inputImg), 'voxel_histogram.mat');\
+	save(outfile, 'S');\
+\
+	% describe the output stream\
+		\
+	aap = aas_desc_outputs(aap, subjectIndex, 'voxel_histogram', outfile);\
+		   \
+end\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f3\b\fs20 \cf0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \page Appendix B: Miscellaneous Useful aa Code Tricks\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 \
+1) Locate a file in the SPM distribution (such as a mask)\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs18 \cf0 	
+\f1 fp = spm_select('FPListRec',aap.directory_conventions.spmdir,filename);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0 \
+This will return the fullpath to the named file if it exists in any folder in the SPM distribution. Directories are searched recursively. For example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs18 \cf0  	
+\f1 fp = spm_select('FPListRec', aap.directory_conventions.spmdir, 'avg152T1.nii);\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs20 \cf0  
+\f0 \
+Returns a full path to the MNI averaged T1 template included with the SPM distribution in the \'93canonical\'94 directory. This file can then be loaded by passing 
+\f1 fp
+\f0  to 
+\f1 spm_vol
+\f0 .\
+\
+\
+2) Running an FSL command\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs18 \cf0  
+\f1       [err w] = aas_runfslcommand(aap,sprintf('feat %s',fsffn));\
+	if (err)\
+		< report error >\
+	end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0\fs20 \cf0  \
+\
+3) Write a message to the Matlab command window, optionally halting the analysis\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	
+\f0 Function syntax:  
+\f1\fs18 aas_log(aap, haltanalysis, msg, optionaltextstyle);
+\fs20 \
+\
+	
+\f0 Example usage:
+\f1 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 	
+\f1 aas_log(aap, true, [\'91Fatal error in module: \'92 mfilename ], \'91r\'92);\
+\
+
+\f0 \
+4) Override the default value for a module parameter defined in its xml header\
+\
+Parameters defined in a module\'92s .xml header file usually include a default value. For example, 
+\f1 aamod_segment8_multichan
+\f0  defines a sampling parameter having a default value of 1 (mm):\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\fs18 \cf0 	<samp desc='Sampling distance (mm)'>1</samp>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs20 \cf0  
+\f0 \
+The default value can be changed in a tasklist using the 
+\f1 extraparameters
+\f0  tag. The following changes 
+\f1 samp
+\f0  to 3:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1\fs18 \cf0 	<module><name>aamod_segment8_multichan</name>\
+		<extraparameters>\
+			<aap><tasklist><currenttask><settings>\
+				<samp>3</samp>\
+			</settings></currenttask></tasklist></aap>\
+		</extraparameters>\
+	</module>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs20 \cf0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 To reiterate, this code is included in the 
+\i user tasklist
+\i0 , not in the 
+\f1 aamod_segment8_mutichan
+\f0  header.\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b \cf0 \
+Appendix C: Miscellaneous aa Programming Topics\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\b0 \cf0 \ul Stream Management Internals\
+\ulnone \
+The details of stream management are usually not important for module coding, but a basic understanding can be helpful for the aa developer (and user) to demystify the process. If nothing else, it will help explain the many files generated by aa during an analysis run.\
+\
+The crux of stream management is associating a named stream with the physical file or files that comprise it. The aa engine does this using a system of plaintext files (suffix: .txt) created in each module working directory. One such file will be created having a name: \
+\
+	
+\f1 stream_<streamname>_inputto_<modulename>.txt
+\f0  \
+\
+for each stream defined in the 
+\i inputstream
+\i0  section of the module header and another having a name:\
+\
+	
+\f1 stream_<streamname>_outputfrom_<modulename>.txt
+\f0  \
+\
+for each stream defined in the 
+\i outputstream
+\i0  section of the module header. Note all module names include a five digit suffix so that each can be uniquely identified even if it is repeated in a tasklist. For example, if 
+\f1 aamod_imcalc
+\f0  appears twice in a given tasklist, the first occurrence will be identified as 
+\f1 aamod_imcalc_00001
+\f0  and the second   as 
+\f1 aamod_imcalc_00002
+\f0  in all aa internals. Notably, aa uses this naming convention when creating module working directories.\
+\
+The contents of these stream management files can be examined using any text editor. Here is an example from aamod_smooth (slightly reformatted here for readability):\
+ \
+MD5	Jw4KC3jegCYB1ew73tptLw == srfMSC12_42580_20170628.nii\
+\
+The string of random characters is a unique identifier aa generates which is used internally to identify the named data file (this example is a smoothed resliced epi nifti file \'97 not the s and r prefixes in the filename and the .nii extension). This file contains the stream data that the module refers to using a named stream (\'91epi\'92 in this example). The identifier is generated using the MD5 hash algorithm, which is why the file begins with the identifier MD5. If the stream  comprises more than one file (e.g., a 3D rather than 4D epi), then the text to the right of 
+\f1 ==
+\f0  would be a list of filenames.\
+\
+When a module is executed, aa will look up an identifier file for any input streams for the module, and convert the identifier to the proper filename. It will then either copy the file(s) into the module working directory or create a link in the MWD so that the functions 
+\f1 aas_getfiles_bystream
+\f0  and 
+\f1 aas_getimages_bystream 
+\f0 can find the file. The choice to copy or link is determined by the 
+\f1 ismodified
+\f0  tag you assigned to the stream: If a stream is explicitly specified as not modified (i.e., 
+\f1 ismodified=\'910\'92
+\f0 ) a link is used, otherwise the file is coped. Note aa uses 
+\i hard
+\i0  links (see: 
+\f1 man ln
+\f0 ) not symbolic links (the latter is what the Finder will show as an alias). For all practical purposes, a hard link is identical to the original file except that it does not occupy additional disk space. To verify a file is a hard link and not a copy, check the files inode (serial number) using 
+\f1 ls -i
+\f0 .\
+\
+An analogous process occurs for the output streams named in your module. An MD5 textfile is created when you describe your output stream \'97 that is, when you pass the streamname and filename to 
+\f1 aas_desc_outputs 
+\f0 in your module.\
+\
+\
+\ul The cmap file\
+\
+\ulnone At the beginning of an analysis, aa constructs a list of data dependencies based on the chain of input and output streams present in the modules appearing in the user tasklist. It passes this information to the scheduling engine, which determines the order in which modules must execute (including parallel execution of modules when using a computing cluster). This list can be viewed in the file <
+\f1\fs22 aap.acq_details.root>
+\fs26 /
+\fs20 aa_cmap.txt.
+\f0 \
+\ul \
+\
+The \'93done\'94 file\
+\
+\ulnone When your module has finished running, the aa engine will create a 
+\i donefile
+\i0  in its working directory to indicate module execution completely normally. This is so aa can restart an analysis that did not run to completion without rerunning unnecessary stages of the analysis. The name of the donefile has the format: 
+\f1 done_<streamname> 
+\f0 where streamname will include a five digit suffix. Like the MD5 stream management files, the donefile is a plain text file (although it does not have a .txt extension). The contents are typically the module execution elapsed time expressed as a single floating point number, although an IP address or other information may be present.\
+\
+The donefile is generated automatically by the aa engine and does not require any module code.\
+\
+\ul The .aa Worker Directory\
+\
+\ulnone AutomaticAnalysis maintains a (hidden) entry in your home directory named 
+\f1 .aa
+\f0  which it populates with a collection of subdirectories called 
+\i workers
+\i0 . These are generated by aa during analysis and are used for internal bookkeeping purposes. Usually a worker is empty, however some may contain files returned by aa jobs submitted to a computing cluster.\
+\
+Ordinarily, you will not interact with workers in any way. However, as of this writing, they create a harmless (but annoying) bug that occasionally requires you to restart a crashed analysis twice, the first restart failing with a non existent directory message. Your options are to delete the worker(s) created by the failed analysis and restart or, alternatively, simply restart the analysis a second time which generally fixes the problem. You can have aa automatically delete workers by specifying a nonzero value for the parameter 
+\f1 aap.options.aaworkercleanup
+\f0 .\
+\
+Note the directory ~/.aa does not appear in the Finder. In Terminal, you must use the \'93all\'94 option in ls (
+\f1 ls -a
+\f0  ) for it to be listed.\
+\
+\
+\ul Modules with no Output Streams\
+\ulnone \
+There is no a priori reason a module must define an output stream. For example, a plotting module might take some input stream and plot a figure for the report and nothing else.\
+\
+Unfortunately, there is currently a bug in the aa scheduler that may cause it to crash if it encounters a module with no output streams. The solution is to simply define a \'93dummy\'94 output stream in your module:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	<outputstreams>\
+		<stream>dummy</stream>\
+	</outputstreams>
+\f0 \
+\
+The actual name of the dummy stream is arbitrary. Your script does not have to describe or even create data for the stream; the definition in the xml header is simply a placeholder needed to placate the scheduler.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+\cf0 \ul \
+Multi-domain Modules\
+\ulnone \
+Although most modules naturally operate in a single analysis domain (e.g.,study, subject, or session), processing tasks exist that are used in more than one. For example, it is possible to spatially smooth an epi file (domain = session), a structural image (domain = subject), or a parametric map generated by a first- or second-level GLM (domain = subject or session). Rather than providing multiple versions of a module, each operating in a different domain, it is possible to implement multi-domain processing in a single module if the necessary code modifications are included.\
+\
+In most cases, the key to writing a multi-domain module is proper consideration of the subject and session identifiers. A \'93session\'94 level module is called once per session per subject, and the module is passed a valid subject and session identifier. A \'93subject\'94 level module is called once per subject, and is passed only a subject identifier. A \'93study\'94 level module is called once per analysis and is passed no identifiers. (A subject \'93identifier\'94 is simply an integer, usually 1,2 \'85 corresponding to the order in which the subjects were defined using 
+\f1 aas_addsubject
+\f0 . Similarly, session identifiers are integers corresponding to the order in which sessions were defined using 
+\f1 aas_addsession
+\f0 .)\
+\
+The primary modification concerns retrieval of module inputs and properly describing outputs. The former is handled by 
+\f1 aas_getimages_bystream
+\f0  or 
+\f1 aas_getfiles_bystream
+\f0  and the latter by aas_desc_outputs. As described earlier, these functions can take a variety of input arguments: session-level modules will pass in a session and subject identifier, subject-level modules will pass only the subject identifier, and study-level module will pass neither. By including appropriately-modified calls to these functions, input and output can be handled properly across domains.\
+\
+As an example, consider the following code from 
+\f1 aamod_smooth.m
+\f0 , which can be used either in the subject or session domain: \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 \
+   function [aap,resp] = aamod_smooth(aap, task, subj, sess)\
+\
+	. . .\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs24 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\fs20 \cf0    if (exist('sess','var'))\
+	P = aas_getfiles_bystream(aap,aap.tasklist.currenttask.domain,\
+				[subj sess],streams\{streamind\});\
+  else\
+	P = aas_getfiles_bystream(aap,subj,streams\{streamind\});\
+  end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+By checking whether the session index is defined, the code can determine whether it is currently operating at the subject or session domain. It then calls 
+\f1 aas_getfiles_bystream
+\f0  with arguments appropriate for the analysis domain. \
+\
+The same check is done later in the module when describing its outputs:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0    if (exist('sess','var'))\
+      aap = aas_desc_outputs(aap,aap.tasklist.currenttask.domain,\
+				[subj sess],streams\{streamind\},outputfns);\
+   else\
+      aap = aas_desc_outputs(aap,subj,streams\{streamind\},outputfns);\
+   end\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+\
+\
+With such modifications, it is then possible to use the same code in different analysis domains. This is usually done by creating multiple xml headers defined for task of interest and (if necessary) aliased to a the mfile. For example, 
+\f1 aamod_smooth.m
+\f0 . is used for both epi and parametric map smoothing. Access to this functionality is provided by the headers 
+\f1 aamod_smooth.xml
+\f0  and 
+\f1 aamod_smooth_spmts.xml
+\f0 , respectively.\
+\
+Here is the 
+\f1 currenttask
+\f0  specifier from 
+\f1 aamod_smooth
+\f0 .xml:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	<currenttask domain='session' \'85\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+Here is the specifier from 
+\f1 aamod_smooth_spmts
+\f0 .xml:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f1 \cf0 	<currenttask domain='subject' mfile_alias='aamod_smooth' \'85\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qj\partightenfactor0
+
+\f0 \cf0 \
+By specifying a 
+\i subject
+\i0  domain and an mfile alias in the header, the code in 
+\f1 aamod_smooth.m
+\f0  can be used to spatially smooth a first-level parametric map (these are generated at the subject level). The remainder of the header may also include definitions specified to the task.\
+}

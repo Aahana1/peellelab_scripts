@@ -1,17 +1,16 @@
-function [ errflag,errstring ] = overlay_nifti(nii_fname, template_fname, render_fname, text_label)
+function [ errflag,errstring ] = overlay_ROI(XYZ, overlay_fname, template_fname, render_fname, text_label)
 %
-% create render & three orthogonal overlays for the specified
-% nifti using the SPM and aa image functions and save to jpg in
-% the same directory the nifti lives
+% create render & three orthogonal overlays for an ROI specified as a 3xn
+% array of XYZ (assumed in same space as the template) and save to jpg
 %
-%   nii_fname           - nifti to overlay (fullpath if not in working dir)
+%   XYZ                 - XYZ values of ROI
+%   overlay_fname       - overlay filename (created here)
 %   template_fname      - structural template (fullpath if not in working dir)
 %   render_fname        - render template (fullpath if not in working dir)
 %   text_label          - text used to label figure (empty = no label)
 %
 % for example:
 %
-%       nii_fname = 'thrT_0001.nii';
 %       template_fname = '/Applications/MATLAB_R2016b.app/toolbox/spm12/toolbox/OldNorm/T1.nii';
 %       render_fname = '/Applications/MATLAB_R2016b.app/toolbox/spm12/rend/render_single_subj.mat';
 %
@@ -27,13 +26,6 @@ errstring = '';
 rendfile = render_fname;
 
 % sanity checks
-
-p = dir(nii_fname);
-if (isempty(p))
-    errstring = 'nifti file not found';
-    errflag = 1;
-    return;
-end
 
 p = dir(rendfile);
 if isempty(p) && (rendfile(1) ~= '/') 
@@ -58,7 +50,18 @@ if (isempty(p))
     errflag = 1;
     return;
 end
-        
+
+% ------------------------------------------------------------------------
+% 0) use the template to make an nii containing the ROI to overlay 
+% ------------------------------------------------------------------------
+
+header = spm_vol(template_fname);
+Y = spm_read_vols(header);
+Y(:) = 0;
+IJK = header.mat\[ XYZ; ones(1,size(XYZ,2)) ];
+Y(sub2ind(size(Y),IJK(1,:),IJK(2,:),IJK(3,:))) = 1;
+nifti_write(overlay_fname, Y, 'seed overlay', header);
+  
 % ------------------------------------------------------------------------
 % 1) Render - we can use shortcut in spm_render by just passing
 % in the nifti and render image filename
@@ -68,7 +71,7 @@ end
 
 global prevrend
 prevrend = struct('rendfile', rendfile, 'brt',0.5, 'col',eye(3));
-out = spm_render(nii_fname,0.5,rendfile);
+out = spm_render(overlay_fname,0.5,rendfile);
 spm_figure('Close','Graphics');
 
 % squeeze render output into montage and write to file
@@ -85,7 +88,7 @@ if (~isempty(text_label))
     'linewidth',1,'margin',5,'backgroundcolor','k'});	
 end
 
-imwrite(mon,strrep(nii_fname,'.nii','_render.jpg'));
+imwrite(mon,strrep(overlay_fname,'.nii','_render.jpg'));
   
 % ------------------------------------------------------------------------
 % 2) three ortho section overlays 
@@ -109,7 +112,7 @@ Ytemplate=Ytemplate.*(Ytemplate>thresh);
 
 % need nifti to match template
 
-nifti_header = spm_vol(nii_fname);
+nifti_header = spm_vol(overlay_fname);
 
 if (~isequal(nifti_header.dim, template_header.dim) ||	norm(nifti_header.mat-template_header.mat)>0.01)
 
@@ -123,7 +126,7 @@ if (~isequal(nifti_header.dim, template_header.dim) ||	norm(nifti_header.mat-tem
 
     spm_reslice({template_header.fname, nifti_header.fname}, resliceOpts);
     
-    [ p,n,e ] = fileparts(nii_fname);
+    [ p,n,e ] = fileparts(overlay_fname);
     nifti_header = spm_vol(fullfile(p,[resliceOpts.prefix n e]));
 
 end
@@ -151,7 +154,7 @@ for a = 0:2 % in 3 axes
     mon = tr_3Dto2D(img_tr(img(:,:,:,1),a==2));
     mon(:,:,2) = tr_3Dto2D(img_tr(img(:,:,:,2),a==2));
     mon(:,:,3) = tr_3Dto2D(img_tr(img(:,:,:,3),a==2));
-    fnsl(a+1,:) = strrep(nii_fname,'.nii',sprintf('_%d.jpg', a));
+    fnsl(a+1,:) = strrep(overlay_fname,'.nii',sprintf('_%d.jpg', a));
 
     if (~isempty(text_label))
         mon = insertInImage(mon, @()text(40,25,strrep(text_label,'_','-')),...
@@ -165,7 +168,7 @@ end
 
 % delete resliced image if one was created
 
-[ p,n,e ] = fileparts(nii_fname);
+[ p,n,e ] = fileparts(overlay_fname);
 try delete(fullfile(p,[resliceOpts.prefix n e])); catch; end
 
     

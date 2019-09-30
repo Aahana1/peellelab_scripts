@@ -23,22 +23,23 @@
 
             <!-- if you do not include T2, comment this block -->
 
- 			<module><name>aamod_get_dicom_t2</name></module>  		   
-			<module><name>aamod_convert_t2</name></module>
-			<module><name>aamod_biascorrect_t2</name></module>
-			<module><name>aamod_freesurfer_deface_apply_t2</name></module>
+            <module><name>aamod_get_dicom_t2</name></module>  		   
+            <module><name>aamod_convert_t2</name></module>
+            <module><name>aamod_biascorrect_t2</name></module>
+            <module><name>aamod_freesurfer_deface_apply_t2</name></module>
             
-           <!-- functional dicom => nifti conversion -->
+            <!-- functional dicom => nifti conversion -->
 
             <module><name>aamod_get_dicom_epi</name></module>  		   
             <module><name>aamod_convert_epis</name></module>
 
-            <!-- need aamod_firstlevel_model in the pipeline so we can do addevents in -->
-            <!-- the userscript but we don't want to actually run it. Ergo aamod_halt -->
+            <!-- we need aamod_firstlevel_model in the pipeline so we can do addevents in -->
+            <!-- the userscript but we don't want to actually run it (because that would -->
+            <!-- require running a complete preprocessing pipeline. Ergo aamod_halt -->
 
             <module><name>aamod_halt</name></module>
             <module><name>aamod_firstlevel_model</name></module>
-            
+                        
 	</main>
 		
 	</tasklist>

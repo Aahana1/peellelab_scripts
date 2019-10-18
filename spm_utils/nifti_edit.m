@@ -10,7 +10,8 @@ function nifti_edit(fname)
 
 
 header = spm_vol(fname);
-nifti_data= spm_read_vols(header);
+% nifti_data= spm_read_vols(header);
+[ nifti_data,XYZ ] = spm_read_vols(header);
 
 
 % generate a mask (either 0 or NaN) and reapply after every edit
@@ -43,12 +44,24 @@ w = waitforbuttonpress;
               break
             end
 
-            if key=='c' % clear selection
+            if key=='u' % unselect
+              drawall(nifti_data);
+              x1 = -1;
+            end
+                        
+            if key=='l' % delete left side
+              nifti_data(XYZ(1,:)<0) = 0;           % assumes MNI normed!
               drawall(nifti_data);
               x1 = -1;
             end
 
-            if key=='d' % clear selection
+            if key=='r' % delete right side
+              nifti_data(XYZ(1,:)>0) = 0;           % assumes MNI normed!
+              drawall(nifti_data);
+              x1 = -1;
+            end         
+                        
+            if key=='d' % delete voxels in selection
               nifti_data = set_voxels(nifti_data,x1,y1,x2,y2,plane,0);
               drawall(nifti_data);
               x1 = -1;
@@ -67,7 +80,8 @@ w = waitforbuttonpress;
                 [ p,n,e ] = fileparts(fname);
                 out_fname = fullfile(p,['ne_' n e]);
                 header.fname = out_fname;
-                spm_write_vol(header, nifti_data); 
+                nifti_save(out_fname, nifti_data,'created by nifti_edit', header);
+                uiwait(msgbox(sprintf('File written to %s',out_fname),'', 'modal'));
             end
           
         case 0    % mouse click 
@@ -90,6 +104,8 @@ w = waitforbuttonpress;
 end
 
 close(gcf);
+
+
 
 
 
@@ -137,10 +153,12 @@ subplot(2,2,4)
 axis off
 text(0,1,'drag mouse to select','FontSize',14);
 text(0,0.9,'d to delete selection','FontSize',14);
-text(0,0.8,'c to clear selection','FontSize',14);
+text(0,0.8,'u to unselect','FontSize',14);
 text(0,0.7,'v set selection to value','FontSize',14);
-text(0,0.6,'s to save','FontSize',14);
-text(0,0.5,'q to quit','FontSize',14);
+text(0,0.6,'l to clear left hemisphere','FontSize',14);
+text(0,0.5,'r to clear right hemisphere','FontSize',14);
+text(0,0.4,'s to save','FontSize',14);
+text(0,0.3,'q to quit','FontSize',14);
 
 [ r,c,s ] = size(nifti_data);
 text(0,0.1,sprintf('Dimensions: %d x %d x %d', r,c,s),'FontSize',14);
@@ -197,6 +215,27 @@ data = nifti_mask .* data;
 end
 
 
+
+%----------------------------------------------------------------------
+function nifti_save(fname,Y,desc,V)
+%----------------------------------------------------------------------
+
+dim = size(Y);
+N      = nifti;
+N.dat  = file_array(fname,dim,V.dt);
+N.mat  = V.private.mat;
+N.mat0 = V.private.mat;
+N.descrip     = desc;
+create(N);
+
+dim = [dim 1];
+for i = 1:prod(dim(4:end))
+    N.dat(:,:,:,i) = Y(:,:,:,i);   
+    spm_get_space([N.dat.fname ',' num2str(i)], V.mat);
+end
+N.dat = reshape(N.dat,dim);
+
+end
 
 
 

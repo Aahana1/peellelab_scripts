@@ -7,20 +7,21 @@ function nifti_edit(fname)
 
 % fname = '/Users/peellelab/data/SANDBOX/DATA/defaced_t1.nii';
 % fname = '/Users/peellelab/data/SANDBOX/DATA/spmT_0001.nii';
-
+% fname = '/Users/peellelab/data/SANDBOX/DATA/con_0008.nii';
+% fname = '/Users/peellelab/con_0001.nii';
 
 header = spm_vol(fname);
-% nifti_data= spm_read_vols(header);
 [ nifti_data,XYZ ] = spm_read_vols(header);
 
+% NaNs don't play nice with our code:
 
-% generate a mask (either 0 or NaN) and reapply after every edit
-% (so we don't create new voxels outside the brain)
+nifti_data(isnan(nifti_data)) = 0;
+
+% generate a mask to reapply after every edit
+% so we don't accidentially create new voxels outside the brain
 
 nifti_mask = nifti_data;
-nift_mask(isnan(nifti_mask)) = 0;
 nifti_mask = ~~nifti_mask;
-
 
 figure('Name',fname,'NumberTitle','off','Position',[0 0 800 800],'MenuBar', 'none');
 set(gcf,'Units','normalized')
@@ -50,13 +51,13 @@ w = waitforbuttonpress;
             end
                         
             if key=='l' % delete left side
-              nifti_data(XYZ(1,:)<0) = 0;           % assumes MNI normed!
+              nifti_data(XYZ(1,:)<=0) = 0;           % assumes MNI normed!
               drawall(nifti_data);
               x1 = -1;
             end
 
             if key=='r' % delete right side
-              nifti_data(XYZ(1,:)>0) = 0;           % assumes MNI normed!
+              nifti_data(XYZ(1,:)>=0) = 0;           % assumes MNI normed!
               drawall(nifti_data);
               x1 = -1;
             end         

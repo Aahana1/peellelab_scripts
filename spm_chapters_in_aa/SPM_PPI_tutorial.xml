@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aap>
+    <tasklist>
+                
+        <initialisation>
+            <module><name>aamod_study_init</name></module>
+        </initialisation>
+                
+        <main>
+            
+            <!-- data imput -->
+            
+            <module><name>aamod_structural_from_ANALYZE</name></module>
+            <module><name>aamod_epi_from_ANALYZE</name>
+            <extraparameters>
+                <aap><tasklist><currenttask><settings>
+                    <repetition_time>3200</repetition_time>
+                </settings></currenttask></tasklist></aap>
+            </extraparameters>
+            </module>
+            
+            <!-- preprocessing -->
+            
+            <!-- not required (PPI data is already preprocessed) 
+            
+            <module><name>aamod_realign</name></module>
+             <module><name>aamod_coreg_extended</name></module>  
+            <module><name>aamod_segment8_multichan</name></module>
+            <module><name>aamod_norm_write</name></module>
+            <module><name>aamod_smooth</name></module>
+            
+            -->
+     
+            <!-- GLM -->
+            
+            <module><name>aamod_firstlevel_model</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <TR>3.22</TR>
+                        <highpassfilter>192</highpassfilter>
+                   </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+            
+            <module><name>aamod_firstlevel_contrasts</name></module>
+            
+            <module><name>aamod_firstlevel_threshold</name>
+                <extraparameters>
+                <aap><tasklist><currenttask><settings>
+                     <threshold><p>0.001</p></threshold>
+                </settings></currenttask></tasklist></aap>
+            </extraparameters>
+            </module>
+ 
+                       
+            <!-- lmax = 2 == motion contrast -->
+            
+             <!-- original SPM manual voi def -->
+            
+            <module><name>aamod_vois_extract</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <VOI>
+                            <name>V2</name>
+                            <Ic>-1</Ic> 
+                            <lmax>2</lmax>      
+                            <def>sphere</def>
+                            <xyz>15 -78 -9</xyz>
+                            <spec>6</spec>
+                        </VOI>
+                     </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+           
+           <!-- testing this should be an equivalent mask extraction -->
+           <!-- results: voi almost identidcal;  slight t-map difference --> 
+
+            <!--
+            <module><name>aamod_vois_extract</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <VOI>
+                            <name>V2</name>
+                            <Ic>-1</Ic> 
+                            <lmax>2</lmax>      
+                            <def>mask</def>
+                            <xyz>0 0 0</xyz>
+                            <spec>/Users/peellelab/V5.nii</spec>
+                        </VOI>
+                     </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+            -->
+          
+            
+           <module><name>aamod_ppi_prepare</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                            <contrasts>[0 -1 1]</contrasts>
+                     </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+
+            <module><name>aamod_firstlevel_model</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <TR>3.22</TR>
+                        <highpassfilter>192</highpassfilter>
+                    </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+
+            <module><name>aamod_firstlevel_contrasts</name></module> 
+            
+            <module><name>aamod_firstlevel_threshold</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                      <threshold><p>0.01</p><extent>20</extent></threshold>    
+                      <description>PPI 0.001 UNC</description>
+                     </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+    
+        </main> 
+             
+    </tasklist>
+</aap>

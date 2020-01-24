@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aap>
+    <tasklist>
+        <currenttask domain='session' desc='Read EPI input files in Analyze format' modality='MRI'>
+            
+            <qsub>
+                <timeBase>0.2</timeBase>
+                <memoryBase>0.2</memoryBase>
+            </qsub>
+            
+            <permanenceofoutput>1</permanenceofoutput>
+            
+			<repetition_time desc='TR (in ms)'></repetition_time>
+			
+			<echo_time desc='TE (in ms)'>0</echo_time>
+			<slice_timing desc='slice timing'>0</slice_timing>
+			<echo_spacing desc='echo spacing'>0</echo_spacing>
+			<phase_encoding_direction desc='phase encoding direction'></phase_encoding_direction>
+			
+			<numdummies></numdummies>
+  
+            <inputstreams>
+			</inputstreams>
+            
+            <outputstreams>
+                <stream>epi</stream>
+                <stream>dummyscans</stream>
+                <stream>epi_dicom_header</stream>
+            </outputstreams>
+            
+        </currenttask>
+    </tasklist>
+</aap>
+

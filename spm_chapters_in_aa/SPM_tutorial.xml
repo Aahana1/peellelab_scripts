@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aap>
+    <tasklist>
+                
+        <initialisation>
+            <module><name>aamod_study_init</name></module>
+        </initialisation>
+                
+        <main>
+            
+            <!-- data imput -->
+            
+            <module><name>aamod_structural_from_ANALYZE</name></module>
+            <module><name>aamod_epi_from_ANALYZE</name>
+            <extraparameters>
+                <aap><tasklist><currenttask><settings>
+                    <repetition_time>7000</repetition_time>
+                </settings></currenttask></tasklist></aap>
+            </extraparameters>
+            </module>
+            
+            <!-- preprocessing -->
+            
+            <module><name>aamod_realign</name></module>
+           <!-- <module><name>aamod_coreg_noss</name></module>  -->
+            <module><name>aamod_coreg_extended</name></module>  
+            <module><name>aamod_segment8_multichan</name></module>
+            <module><name>aamod_norm_write</name></module>
+            <module><name>aamod_smooth</name></module>
+     
+            <!-- GLM -->
+            
+            <module><name>aamod_firstlevel_model</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <TR>7</TR>
+                    </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+            <module><name>aamod_firstlevel_contrasts</name></module>
+            <module><name>aamod_firstlevel_threshold</name>
+                <extraparameters>
+                <aap><tasklist><currenttask><settings>
+                     <threshold><p>0.001</p></threshold>
+                     <!-- change the threshold as needed -->
+                </settings></currenttask></tasklist></aap>
+            </extraparameters>
+            </module>
+        </main> 
+        
+    </tasklist>
+</aap>

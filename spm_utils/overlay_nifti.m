@@ -43,8 +43,6 @@ function [ errflag,errstring ] = overlay_nifti(nii_fname, template_fname, render
 % nii2 = green, nii3 = blue. If more than 3 nii are passed, the function
 % barfs and returns.
 %
-% 3) rendering is thresholded at 0 (-ive values are not displayed)
-%
 %
 % CHANGE HISTORY
 %
@@ -61,7 +59,7 @@ errstring = '';
 % ------------------------------------------------------------------------
 
 if (nargin < 4) 
-    errstring = 'Usage: overlay_nifti(nii_fname, template_fname, render_fname [, image_label])';
+    errstring = 'Usage: overlay_nifti(nii_fname, template_fname, render_fname, savefile_fname, [image_label, brightness])';
     errflag = 1;
     return;
 end

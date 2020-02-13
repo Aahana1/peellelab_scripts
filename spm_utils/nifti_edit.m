@@ -75,8 +75,47 @@ w = waitforbuttonpress;
                 nifti_data = set_voxels(nifti_data,x1,y1,x2,y2,plane,str2double(answer{1}));
                 drawall(nifti_data);
                 x1 = -1;
-            end 
+            end
             
+            if key=='1' % enter a single voxel value
+                prompt = {'Enter new value as: x(mm),y(mm),z(mm),v'};
+                dlgtitle = 'Voxel Value';
+                answer = inputdlg(prompt, dlgtitle,1,{'0'});
+                answer = split(answer,',');
+                xyz = header.mat \ [str2double(answer{1}) str2double(answer{2}) str2double(answer{3}) 1]';
+                xyz = round(xyz);
+                nifti_data(xyz(1),xyz(2),xyz(3)) = str2num(answer{4});           
+                drawall(nifti_data);
+                x1 = -1;
+            end
+
+            if key=='e' % expand (convolve with 3x3x3 block)
+                nifti_data = convn(nifti_data,ones(3,3,3),'same');
+                drawall(nifti_data);
+                x1 = -1;
+            end
+            
+            if key=='b' % binarize
+                nifti_data = ~~nifti_data;
+                drawall(nifti_data);
+                x1 = -1;
+            end
+
+                
+             
+            % applying the starting mask is an simple way
+            % to make sure no voxels get added outside the brain.
+            % We used to do this automatically, but it doesn't
+            % work if we're adding to a sparse nifti (e.g., ROI)
+            % bc the mask deletes everything outside the initial
+            % content). So make it an explicit option.
+                          
+            if key=='m' % apply starting mask
+                nifti_data = nifti_mask .* nifti_data;
+                drawall(nifti_data);
+                x1 = -1;
+            end
+                   
             if key=='s' % save
                 [ p,n,e ] = fileparts(fname);
                 out_fname = fullfile(p,['ne_' n e]);
@@ -153,16 +192,18 @@ title('coronal');
 subplot(2,2,4)
 axis off
 text(0,1,'drag mouse to select','FontSize',14);
-text(0,0.9,'d to delete selection','FontSize',14);
-text(0,0.8,'u to unselect','FontSize',14);
-text(0,0.7,'v set selection to value','FontSize',14);
-text(0,0.6,'l to clear left hemisphere','FontSize',14);
-text(0,0.5,'r to clear right hemisphere','FontSize',14);
-text(0,0.4,'s to save','FontSize',14);
-text(0,0.3,'q to quit','FontSize',14);
+text(0,0.9,'d - delete selection','FontSize',14);
+text(0,0.8,'u - unselect','FontSize',14);
+text(0,0.7,'v - set selection to value','FontSize',14);
+text(0,0.6,'l[r] - clear left[right] hemisphere','FontSize',14);
+text(0,0.5,'1 - specify one voxel','FontSize',14);
+text(0,0.4,'e - expand','FontSize',14);
+text(0,0.3,'m - (re)mask','FontSize',14);
+text(0,0.2,'b - binarize','FontSize',14);
+text(0,0.1,'s - save; q - quit','FontSize',14);
 
 [ r,c,s ] = size(nifti_data);
-text(0,0.1,sprintf('Dimensions: %d x %d x %d', r,c,s),'FontSize',14);
+text(0,0,sprintf('Dimensions: %d x %d x %d', r,c,s),'FontSize',14);
 
 colormap gray
 
@@ -209,9 +250,8 @@ switch plane
 end
 
 
-% reapply mask
-
-data = nifti_mask .* data;
+% reapply mask - opdate: change this to m option
+% % % data = nifti_mask .* data;
 
 end
 

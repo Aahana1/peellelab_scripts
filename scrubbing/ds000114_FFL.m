@@ -6,7 +6,7 @@ disp('working out final tasklist including wavelet despike, 24rp, rWLS');
 % INITIALIZATION
 % ------------------------------------------------------------------------------------------------------------------------------
 
-cd('~');
+% cd('~');
 more off;
 clear all
 aa_ver5;
@@ -29,7 +29,8 @@ end
 % ------------------------------------------------------------------------------------------------------------------------------
 
 aap.acq_details.root = '/Users/peellelab/DATA/SCRUB';
-aap.directory_conventions.analysisid = 'RESULTS_ds000114_FFL'; % finger-foot-lips
+% aap.directory_conventions.analysisid = 'RESULTS_ds000114_FFL'; % finger-foot-lips
+aap.directory_conventions.analysisid = 'RESULTS_ds000114_FFL_TRT'; % finger-foot-lips
 
 % just point rawdatadir at the top level BIDS dir, processBIDS does the rest
 
@@ -43,7 +44,7 @@ aap.options.autoidentifystructural_chooselast = 0;
 
 % we "throw out" first 4 volumes using scrubbing, ergo set numdummies = 0
 
-aap.acq_details.numdummies = 0;	
+aap.acq_details.numdummies = 0;
 aap.acq_details.input.correctEVfordummies = 0;
 
 % PCT if availble
@@ -66,36 +67,57 @@ aap = aas_renamestream(aap,'aamod_firstlevel_model_00004','epi','aamod_norm_writ
 % ------------------------------------------------------------------------------------------------------------------------------
 
 % ds000114 has separate test and retest sessions
-% we will combine into ONE model (then fake test/retest with contrasts)
+% we will combine these into ONE model then implement test/retest using contrasts
 % (if your dataset is organized as one session, DON'T do this!)
 %
-% aside: generates a warning: 
-% 
-%     WARNING: You have selected combining multiple BIDS sessions!
-%     Make sure that you have also set aap.options.autoidentify*_* appropriately!
-%     N.B.: <aa sessionname> = <BIDS taskname>_<BIDS sessionname>
+% the key is setting the "combinemultiple" option to true (the default is false):
 
-aap.acq_details.input.combinemultiple = true;   % do BEFORE aas_processBIDS
+aap.acq_details.input.combinemultiple = true;   
 
-% aap = aas_processBIDS(aap, [], {'finger_foot_lips'}, { 'sub-01' });   % how to test one task and one subject
-aap = aas_processBIDS(aap, [], {'finger_foot_lips'});                   % all subjects (still must select task of interest)
+% note, set this *BEFORE* aas_processBIDS
+%
+% if combinemultiple = true, aa creates two sessions for each subject:
+%
+%	finger_foot_lips_retest
+%	finger_foot_lips_test
+%
+% you can verify this in the model -- the design matrix will have 2 sessions
+%
+% for comparision, if combinemultiple = false, aa creates a test
+% and a retest DIRECTORY at the SUBJECT level, each with one session
+% called finger_foot_lips. That's not what we want.
+
+% ----- Selecting the tasks in processBIDS and addcontrast ---------
+%
+% DON'T include the _test or _retest suffix when specifying the
+% task in processBIDS (ds000114 has multiple tasks; here we analyze
+% finger_foot_lips):
+
+% aap = aas_processBIDS(aap, [], {'finger_foot_lips_test','finger_foot_lips_retest'}); % <= WRONG
+aap = aas_processBIDS(aap, [], {'finger_foot_lips'}); % <= DO IT THIS WAY
+
+% aside: here's how to test one subject, which is handy
+% aap = aas_processBIDS(aap, [], {'finger_foot_lips'}, { 'sub-01' });   
+
+% however, DO use the _test and _retest suffix when specifying *contrasts*
+
+% here are contrasts for max-t extraction (we want to use all the data in the max-T):
+% (we simplfy this by using sameforallsessions so the session names are irrelevant)
 
 aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [1 -0.5 -0.5], 'finger', 'T');
 aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [-0.5 1 -0.5], 'foot', 'T');
 aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [-0.5 -0.5 1], 'lips', 'T');
 
-% setup for TEST RETEST (i.e. aap.acq_details.input.combinemultiple = false)
+% here are the contrasts for test-retest:
 
-% note aa names the sessions are finger_foot_lips_test and finger_foot_lips_retest)
-%
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [1 -0.5 -0.5], 'finger-test', 'T');
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [1 -0.5 -0.5], 'finger-retest', 'T');
-% 
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [-0.5 1 -0.5], 'foot-test', 'T');
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [-0.5 1 -0.5], 'foot-retest', 'T');
-% 
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [-0.5 -0.5 1], 'lips-test', 'T');
-% aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [-0.5 -0.5 1], 'lips-retest', 'T');
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [1 -0.5 -0.5], 'finger-test', 'T');
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [1 -0.5 -0.5], 'finger-retest', 'T');
+
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [-0.5 1 -0.5], 'foot-test', 'T');
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [-0.5 1 -0.5], 'foot-retest', 'T');
+
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_test', [-0.5 -0.5 1], 'lips-test', 'T');
+aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'singlesession:finger_foot_lips_retest', [-0.5 -0.5 1], 'lips-retest', 'T');
 
 							   
 % ------------------------------------------------------------------------------------------------------------------------------

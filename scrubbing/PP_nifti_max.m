@@ -5,11 +5,11 @@ function nifti_results = PP_nifti_max(options)
 % generate nifti_max barplots (wholebrain and one ROI) using secondlevel maps
 %
 % in brief, the function will crawl the results directory and extract whole-brain 
-% and optionally ROI max-t for each aamod_secondlevel_threshold_* in the root 
+% and optionally ROI max-t for each aamod_secondlevel_threshold_* in the results_dir 
 % directory (each of which corresponds to a scrubbing strategy. The maps
 % are are located in:
 %
-%   /<options.root>/aamod_secondlevel_threshold_XXXX/group_stats/<options.contrast>/<options.tmap>
+%   <options.results_dir>/aamod_secondlevel_threshold_XXXX/group_stats/<options.contrast>/<options.tmap>
 %
 % The values are returned in vector nifti_max and a sanity-check bargraph
 % is generated and saved to jpg.
@@ -18,7 +18,7 @@ function nifti_results = PP_nifti_max(options)
 %
 % options - struct with the following fields:
 %
-% .root      - top level aa analysis folder
+% .results_dir - top level aa analysis folder
 % .contrast  - contrast to example (one of the folders under "group_stats")
 % .tmap      - tmap to use:
 %
@@ -51,7 +51,7 @@ function nifti_results = PP_nifti_max(options)
 %
 % EXAMPLE USE:
 %
-%     options.root = '/Users/peellelab/data/scrub/RESULTS_ds000114_FFL';
+%     options.results_dir = '/Users/peellelab/data/scrub/RESULTS_ds000114_FFL';
 %     options.contrast = 'foot';
 %     options.tmap = 'spmT_0002';
 %     options.SEED.center = [12 -78 -10];
@@ -59,34 +59,25 @@ function nifti_results = PP_nifti_max(options)
 %     options.ROI_fname = '/Users/peellelab/MATLAB_SCRIPTS/V5.nii';
 %     options.ROI_description = 'V5';
 %     options.plot_title = 'FFL foot'; 
-
-
-% 1) top level results folder
-
-% results_dir = '/Users/peellelab/data/scrub/RESULTS_ds000114_FFL';
-results_dir = options.root;
-
+%
 
 % these match the scrubbing branches in the tasklist:
 % actual results are x2 (odd entries are UNC, evens are FWE)
 
 scrub_descriptors = {'RP6', 'RP24', 'wavelet','rWLS', 'FD1','FD2','FD5','FD10', 'FD20', 'FD40', 'DV1', 'DV2', 'DV5', 'DV10', 'DV20', 'DV40' };
-    
+
+% unpack options struc
+
+% 1) top level results folder
+
+results_dir = options.results_dir;
+
 % 2) contrast to examine - these will be the tags used in aas_addcontrast
-%
-% gorgo - motor example
-%
-% contrast_to_examine = 'finger';
-% contrast_to_examine = 'foot';
-% contrast_to_examine = 'lips';     % best for somatomotorlateral ROI
 
 contrast_to_examine = options.contrast;
 
-%
-% 3) tmap - presumably activation is most meaningful, but you can pick whichever you
-% want. There are also thresholded versions of these files (thr*.nii)
+% 3) tmap
 
-% tmap_to_examine = 'spmT_0002'; 
 tmap_to_examine= options.tmap;
 
 % 4a) ROI definition as ROI file
@@ -101,10 +92,6 @@ end
 
 SEED = [];
 
-% SEED.name = 'SomatomotorLateral';
-% SEED.center = [ 65.64 -7.88 24.83 ];
-% SEED.radius = 5;
-
 if (~isempty(options.SEED))
     SEED.center = options.SEED.center;
     SEED.radius = options.SEED.radius;
@@ -113,12 +100,10 @@ end
 
 % 5) ROI_description (used to label the plot)
 
-% ROI_description = 'SomatomotorLateral ROI [ 65.64 -7.88 24.83 ]';
 ROI_description = options.ROI_description;
 
 % 6) save filename for the jpg (or leave fig_fname empty to skip plotting)
 
-% title_string = 'FFL foot';
 title_string = options.plot_title;
 
 fig_fname = [];

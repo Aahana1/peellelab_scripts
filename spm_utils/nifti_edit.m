@@ -77,6 +77,15 @@ w = waitforbuttonpress;
                 x1 = -1;
             end
             
+            if key=='t' % value
+                prompt = {'Enter threshold value'};
+                dlgtitle = 'Threshold';
+                answer = inputdlg(prompt, dlgtitle,1,{'0'});
+                nifti_data(nifti_data<str2double(answer{1})) = 0;
+                drawall(nifti_data);
+                x1 = -1;
+            end
+            
             if key=='1' % enter a single voxel value
                 prompt = {'Enter new value as: x(mm),y(mm),z(mm),v'};
                 dlgtitle = 'Voxel Value';
@@ -99,9 +108,7 @@ w = waitforbuttonpress;
                 nifti_data = ~~nifti_data;
                 drawall(nifti_data);
                 x1 = -1;
-            end
-
-                
+            end              
              
             % applying the starting mask is an simple way
             % to make sure no voxels get added outside the brain.
@@ -191,19 +198,20 @@ title('coronal');
 
 subplot(2,2,4)
 axis off
-text(0,1,'drag mouse to select','FontSize',14);
-text(0,0.9,'d - delete selection','FontSize',14);
-text(0,0.8,'u - unselect','FontSize',14);
-text(0,0.7,'v - set selection to value','FontSize',14);
-text(0,0.6,'l[r] - clear left[right] hemisphere','FontSize',14);
+text(0,1,' --- drag mouse to select ---','FontSize',14);
+text(0,0.9,'d - delete selection    u - unselect','FontSize',14);
+text(0,0.8,'v - set selection to value','FontSize',14);
+text(0,0.7,'l - clear left hemisphere','FontSize',14);
+text(0,0.6,'r - clear right hemisphere','FontSize',14);
 text(0,0.5,'1 - specify one voxel','FontSize',14);
-text(0,0.4,'e - expand','FontSize',14);
-text(0,0.3,'m - (re)mask','FontSize',14);
-text(0,0.2,'b - binarize','FontSize',14);
-text(0,0.1,'s - save; q - quit','FontSize',14);
+text(0,0.4,'e - expand          m - (re)mask','FontSize',14);
+text(0,0.3,'b - binarize          t - threshold','FontSize',14);
+text(0,0.2,'s - save               q - quit','FontSize',14);
 
 [ r,c,s ] = size(nifti_data);
-text(0,0,sprintf('Dimensions: %d x %d x %d', r,c,s),'FontSize',14);
+nmin = min(min(min(nifti_data)));
+nmax = max(max(max(nifti_data)));
+text(0,0,sprintf('Dimensions: %dx%dx%d  min/max: %5.2f/%5.2f', r,c,s,nmin,nmax),'FontSize',14);
 
 colormap gray
 

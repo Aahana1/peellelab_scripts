@@ -90,7 +90,7 @@
                 <module><name>aamod_secondlevel_threshold</name>
                     <extraparameters>
                         <aap><tasklist><currenttask><settings>
-                             <description>baseline, 0.05 FWE</description>
+                             <description>6 rp, 0.05 FWE</description>
                         </settings></currenttask></tasklist></aap>
                     </extraparameters>
                 </module>
@@ -102,7 +102,7 @@
                             <correction>none</correction>
                             <p>0.001</p>
                         </threshold>
-                        <description>baseline, 0.001 UNC</description>
+                        <description>6 rp, 0.001 UNC</description>
                     </settings></currenttask></tasklist></aap>
                     </extraparameters>
                 </module>	 

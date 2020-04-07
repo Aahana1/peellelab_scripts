@@ -1,0 +1,955 @@
+<?xml version="1.0" encoding="utf-8"?>
+<aap>
+    <tasklist>
+        <initialisation>	
+            <module><name>aamod_study_init</name></module>
+        </initialisation>
+		
+        <main>
+         
+            <!-- new expanded scrubbing pipeline (BIDS input) -->
+           
+            <!-- preprocessing -->
+            
+            <module><name>aamod_structuralfromnifti</name></module>
+            <module><name>aamod_reorienttomiddle_structural</name></module>
+            <module><name>aamod_epifromnifti</name></module>
+            <module><name>aamod_reorienttomiddle_epi</name></module>
+            
+            <module><name>aamod_biascorrect_structural</name></module>
+   
+            <module><name>aamod_DVARS</name></module>
+            <module><name>aamod_GLOBALMEAN</name></module>
+            
+            <module><name>aamod_realign</name></module>  
+            <module><name>aamod_biascorrect_meanEPI</name></module>
+            <module><name>aamod_coreg_extended</name></module>
+ 
+            <!--
+            <module><name>aamod_segment8_multichan</name>
+                 <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <samp>2</samp>
+                    </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module> -->
+            
+             <module><name>aamod_segment8_noT2</name>
+                 <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <samp>2</samp>
+                    </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+            
+            
+				
+            <module><name>aamod_brainmask_nativegrey</name></module>	
+            <module><name>aamod_reslicenativegreymask2epi</name></module> 
+            <module><name>aamod_greyplot</name></module>
+            <module><name>aamod_lossplot</name></module>
+            
+            <module><name>aamod_norm_write_epi</name></module>
+            
+            <module><name>aamod_smooth</name>
+                <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <FWHM>8</FWHM>
+                    </settings></currenttask></tasklist></aap>
+                </extraparameters>
+            </module>
+                    
+            <!-- this looks like scrub, but is really removing first 4 frames -->
+            <!-- for branches that don't include scrubbing -->
+
+            <module><name>aamod_scrub_epis</name>
+            <extraparameters>
+                <aap><tasklist><currenttask><settings>
+                    <explicit_framelist>[1:4]</explicit_framelist>
+                </settings></currenttask></tasklist></aap>
+            </extraparameters>
+            </module>
+
+            <module>
+
+               <branch>
+                   
+                <!-- 1) baseline -->
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                        <includemovementpars>1</includemovementpars>
+                        <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module> 
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                        <description>6 rp, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                
+                <!-- include both secondlevel FWE (default) and UNC -->
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>6 rp, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                        <threshold>
+                            <correction>none</correction>
+                            <p>0.001</p>
+                        </threshold>
+                        <description>6 rp, 0.001 UNC</description>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>	 
+
+
+                </branch>                 
+
+                <branch>
+
+                <!-- 2) 24 rp -->
+                
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>1</includemovementpars>
+                            <includespikes>1</includespikes>
+                            <moveMat>[1 1 0; 1 1 0]</moveMat>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module> 
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>24 rp, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>24 rp, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>24 rp, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+
+                </branch>
+
+                <branch>
+
+                <!-- 3) wavelet despike -->
+
+                <module><name>aamod_waveletdespike</name></module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>1</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module> 
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>wavelet despike, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>wavelet despike, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>wavelet despike, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>
+
+
+                <branch>
+
+                <!-- 4) rWLS -->
+
+                <!-- rWLS docs say it is best run on unsmoothed data -->  
+                <!-- so point a_f_l epi input to epi from norm_write_epi in userscript: -->
+                <!-- aap = aas_renamestream(aap,'aamod_firstlevel_model_00004','epi','aamod_norm_write_epi_00001.epi'); -->
+ 
+                <module><name>aamod_firstlevel_model</name>      
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>1</includemovementpars>
+                            <includespikes>1</includespikes>
+                            <autocorrelation>wls</autocorrelation>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module> 
+                
+                <!-- rWLS docs say smooth betas (i.e., cons) AFTER modeling -->             
+                <module><name>aamod_smooth_cons</name></module>
+                
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>rWLS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>rWLS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+              
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>rWLS 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>	
+
+
+                </branch>
+
+                <!-- scrubbing -->
+
+                <branch>  
+ 
+                <!-- this should ignore pre-branch aamod_scrub_epis -->
+                <!-- because it doesn't use any of the outputs -->
+ 
+                 <!-- 5) FD 1% -->
+                 
+                 <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.onepercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                
+                <module><name>aamod_firstlevel_model</name> 
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>1% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>1% FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+               
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>1% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>   
+
+               <!-- 6) FD 2% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.twopercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>2% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>2%FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>2% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+                
+               <!-- 7) FD 5% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.fivepercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>5% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>5% FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>5% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+ 
+               <!-- 8) FD 10% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.tenpercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>10% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>10% FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>10% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch> 
+               
+               <!-- 9) FD 20% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.twentypercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>20% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>20% FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>20% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+  
+               
+               <!-- 10) FD 40% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.FD > metric_thresholds.FD.fortypercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>40% FD, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>40% FD, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>40% FD, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+ 
+
+                
+                <branch>  
+ 
+                <!-- 11) DVARS 1% -->
+ 
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.onepercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>1% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+                
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>1% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+               
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>1% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>   
+
+               <!-- 12) DVARS 2% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.twopercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>2% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>2% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>2% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+                
+               <!-- 13) DVARS 5% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.fivepercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>5% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>5% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>5% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+ 
+               <!-- 14) DVARS 10% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.tenpercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>10% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>10% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>10% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>         
+               
+               <!-- 15) DVARS 20% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.twentypercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>20% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>20% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>20% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>  
+  
+               
+               <!-- 16) DVARS 40% -->
+               
+                <branch>  
+
+                <module><name>aamod_scrub_epis</name>
+                    <extraparameters>
+                    <aap><tasklist><currenttask><settings>
+                        <explicit_framelist>[1:4]</explicit_framelist>
+                        <scrub_criteria> metric_data.DVARS > metric_thresholds.DVARS.fortypercent </scrub_criteria>
+                    </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_firstlevel_model</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <includemovementpars>0</includemovementpars>
+                            <includespikes>1</includespikes>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+                <module><name>aamod_firstlevel_contrasts</name></module>
+                <module><name>aamod_firstlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <description>40% DVARS, 0.001 UNC</description>
+                         </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_model</name></module>	
+                <module><name>aamod_secondlevel_contrasts</name></module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                             <description>40% DVARS, 0.05 FWE</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                <module><name>aamod_secondlevel_threshold</name>
+                    <extraparameters>
+                        <aap><tasklist><currenttask><settings>
+                            <threshold>
+                                <correction>none</correction>
+                                <p>0.001</p>
+                            </threshold>
+                            <description>40% DVARS, 0.001 UNC</description>
+                        </settings></currenttask></tasklist></aap>
+                    </extraparameters>
+                </module>
+
+                </branch>          
+                     
+              	
+            </module>
+ 
+    
+        </main>
+    </tasklist>
+</aap>

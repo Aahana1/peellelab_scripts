@@ -5,7 +5,7 @@ function TRT = PP_test_retest(options)
 % return test-restest metrics for 16 branch denoising analysis
 % save a jpeg plot for sanity checking
 %
-% this is set up to use test-retest implemented across sessions using contrasts
+% this is set up to do test-retest implemented across sessions using contrasts
 %
 % it assumes these 16 denoising strategies exist in the results folder:
 %
@@ -28,27 +28,36 @@ function TRT = PP_test_retest(options)
 %   aamod_firstlevel_threshold_00015 will contain test and retest for 20% DVARS scrub
 %   aamod_firstlevel_threshold_00016 will contain test and retest for 40% DVARS scrub
 %
-% INPUT (explained after):
+% INPUT
 %
-%   options.analysis_description
-%   options.results_dir
-%   options.unthreshed_test
-%   options.threshed_test
-%   options.unthreshed_retest
-%   options.threshed_retest
-%   options.plot_label
-%   options.fig_fname
+%   options -- struct with the following 8 fields:
 %
-%   0) options.analysis_description - brief description (returned in output struct)
+%   1) options.analysis_description
+%   2) options.results_dir
+%   3) options.unthreshed_test
+%   4) options.threshed_test
+%   5) options.unthreshed_retest
+%   6) options.threshed_retest
+%   7) options.plot_label
+%   8) options.fig_fname
 %
-%   1) options.results_dir - top level aa results_dir
-
-% results_dir = '/Volumes/DATA01/SCRUB/RESULTS_ds000102_UNCFWE_NORP';
-% results_dir = '/Users/peellelab/data/scrub/RESULTS_ds000114_FFL';
+%   1) options.analysis_description - one-line text description -- this is
+%   returned in the output so that the data is  self-documenting (which is 
+%   handy if/when you come back to the results weeks or months later).
 %
-%   2-5) Specify the unthresholded and thresholded t-maps to use. This will depend on which contrast you want to examine. 
-%   The maps are named in the order in which you define the contrasts in the userscript. For example, here are the contrasts 
-%   used for the flanker data (ds000002):
+%   2) options.results_dir - top level aa results_dir
+%
+%   3-6) the unthresholded and thresholded t-maps to use. The maps live in 
+%
+%       /<results_dir>/aamod_firstlevel_threshold_0000XX/sub-**/stats/
+%
+%   where XX is 01-16 based on denoising branch. The nii to use are named:
+%
+%       spmT_000Y.nii - UNthresholded
+%       thrT_000Y.nii - thresholded
+%
+%   where Y depends on the contrast you want to examine and depends on the order the contrasts were
+%   defined in the usescript. For example, here are the contrasts for the flanker data (ds000002):
 % 
 %     aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [1 0], 'congruent_correct', 'T');
 %     aap = aas_addcontrast(aap, 'aamod_firstlevel_contrasts_*', '*', 'sameforallsessions', [0 1], 'incongruent_correct', 'T');
@@ -65,7 +74,7 @@ function TRT = PP_test_retest(options)
 %
 % obviously contrasts 4/5, 6/7, and 8/9 are set up for test/retest
 %
-% so, if we wanted to examine test and retest on CC we would define:
+% So, if we wanted to examine test and retest on "CC" we would define:
 %
 %     options.unthreshed_test = 'spmT_0004.nii';
 %     options.threshed_test = 'thrT_0004.nii';
@@ -75,63 +84,67 @@ function TRT = PP_test_retest(options)
 % 
 % that is, we compare:
 %
-%         /root/aamod_firstlevel_threshold_00001/sub-**/stats/spmT_0004.nii 
-%         /root/aamod_firstlevel_threshold_00001/sub-**/stats/spmT_0005.nii
+%     /<results_dir>/aamod_firstlevel_threshold_00001/sub-**/stats/spmT_0004.nii 
+%     /<results_dir>/aamod_firstlevel_threshold_00001/sub-**/stats/spmT_0005.nii
+%
 % and
-%         /root/aamod_firstlevel_threshold_00001/sub-**/stats/thrT_0004.nii 
-%         /root/aamod_firstlevel_threshold_00001/sub-**/stats/thrT_0005.nii
 %
-% (these are the data shown as the dotted line in the difference plot (i.e. baseline))
+%     /<results_dir>/aamod_firstlevel_threshold_00001/sub-**/stats/thrT_0004.nii 
+%     /<results_dir>/aamod_firstlevel_threshold_00001/sub-**/stats/thrT_0005.nii
 %
-% we compare 
+%  These are the data plotted the 1st column of the sanity plot ("RP6") 
+%  -- gray dots = individual subjects; red dot == mean (the mean value is
+%  also used for the dotted line as a baseline comparison)
 %
-%         /root/aamod_firstlevel_threshold_00002/sub-**/stats/spmT_0004.nii 
-%         /root/aamod_firstlevel_threshold_00002/sub-**/stats/spmT_0005.nii
+% Next, we compare: 
+%
+%     /<results_dir>/aamod_firstlevel_threshold_00002/sub-**/stats/spmT_0004.nii 
+%     /r<esults_dir>/aamod_firstlevel_threshold_00002/sub-**/stats/spmT_0005.nii
+%
 % and
-%         /root/aamod_firstlevel_threshold_00002/sub-**/stats/thrT_0004.nii 
-%         /root/aamod_firstlevel_threshold_00002/sub-**/stats/thrT_0005.nii
 %
-% (these are the data shown in the 1st column in the difference plot)
+%     /<results_dir>/aamod_firstlevel_threshold_00002/sub-**/stats/thrT_0004.nii 
+%     /<results_dir>/aamod_firstlevel_threshold_00002/sub-**/stats/thrT_0005.nii
 %
-% and so on, up through all 16 scrubbing branches
+%  These are the data shown in the 2nd column in the difference plot.
 %
-% the unthesholded files (spmT_XXXX.nii) are used to compute RMS and correlation
-% the thresholded files (thrT_XXXX.nii) are used to compute DICE (and # sig voxels,
-% which we no longer use in the poster)
+%  and so on, up through all 16 scrubbing branches
 %
-% Be sure to include the nii extension in the name!
+%   The unthesholded files (spmT_XXXX.nii) are used to compute RMS and correlation
+%   the thresholded files (thrT_XXXX.nii) are used to compute DICE (and # sig voxels,
+%   which we no longer use in the poster)
 %
-% note you might need to run this repeatedly and have a look at all
-% the test/retest contrasts and pick a good result to show -- sometimes the
-% test/retest results are poor, especially if there wasn't much data to
-% begin with
+%   Be sure to include the nii extension in the name!
 %
-% 6) options.plot_label - label for plot
-% 7) options.fig_fname - filename for figure (empty = don't save figure)
+%   note you might need to run this repeatedly and have a look at all
+%   the test/retest contrasts and pick a good result to show -- sometimes the
+%   test/retest results are poor, especially if there wasn't much data to
+%   begin with
 %
-% note the plot is really only intended to sanity check the results. It's
-% not publication quality.
-%
+%   7) options.plot_label - label for plot
+%   8) options.fig_fname - filename for figure (empty = don't save figure)
 %
 % EXAMPLE
 % 
-%     analysis_description = 'FFL TRT testing'
-%              results_dir = '/Users/peellelab/DATA/SCRUB/RESULTS_ds000114_FFL'
-%          unthreshed_test = 'spmT_0006.nii'
-%            threshed_test = 'thrT_0006.nii'
-%        unthreshed_retest = 'spmT_0007.nii'
-%          threshed_retest = 'thrT_0007.nii'
-%               plot_label = 'FFL'
-%                fig_fname = 'FFL_TRT.jpg'
+%     options.analysis_description = 'FFL TRT testing';
+%     options.results_dir = '/Volumes/DATA01/SCRUB_SUBSET/RESULTS_ds000114_FFL';
+%     options.unthreshed_test = 'spmT_0006.nii';
+%     options.threshed_test = 'thrT_0006.nii';
+%     options.unthreshed_retest = 'spmT_0007.nii';
+%     options.threshed_retest = 'thrT_0007.nii';
+%     options.plot_label = 'FFL';
+%     options.fig_fname = 'FFL_TRT.jpg';
 %
 % OUTPUT (struct):
 %
-%   TRT.rms - test-retest rms results
-%   TRT.corr - test-retest correlation results
-%   TRT.dice - test-retest dice results
+%   TRT.rms - test-retest rms results (nsubject x 16)
+%   TRT.corr - test-retest correlation results (nsubject x 16)
+%   TRT.dice - test-retest dice results (nsubject x 16)
 %   TRT.descriptors - 1x16 cell array of denoising strategy descriptors
-%   TRT.results_description - options.analysis_description (for documentation)
+%   TRT.results_description - options.analysis_description
 %
+% Also, the function prints the individual file comparisons to the command
+% window while it runs. You should verify that these make sense.
 
 results_dir = options.results_dir;
 
@@ -139,8 +152,6 @@ unthreshed_test = options.unthreshed_test;
 threshed_test = options.threshed_test;
 unthreshed_retest = options.unthreshed_retest;
 threshed_retest = options.threshed_retest;
-
-% QA plot options
 
 PLOT_LABEL = options.plot_label;
 fig_fname = options.fig_fname;
@@ -155,10 +166,6 @@ end
 
 	
 % generate data
-
-trt_rms  = [ ];
-trt_corr = [ ];
-trt_dice = [ ];
 
 trt_rms  = [ ];
 trt_corr = [ ];
@@ -400,13 +407,7 @@ TRT.dice = trt_dice;
 
 TRT.results_description = options.analysis_description;
 
-
 end
-
-
-
-
-
 
 
 

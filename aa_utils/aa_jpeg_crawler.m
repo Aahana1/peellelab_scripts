@@ -1,18 +1,19 @@
-% function aa_jpeg_crawler(aap, exclude_list)
 function aa_jpeg_crawler(aap, path_regex)
 %
-% created an indexed report
+% crawl an aa results directory for jpegs and assemble them into
+% a scrollable html doc
 %
-%	usage: aa_jpeg_crawler(aap, path_regex)
+%	usage: aa_jpeg_crawler(aap, [path_regex])
 %
 % INPUT
 %
 %	aap - aap struct of analysis to crawl
 %
+% OPTIONAL
+%
 %   path_regex - only include files in the report having this regex
 %   in their pathname (e.g. "firstlevel_model" will only include files
-%   ./*firstlevel_model*/../*.jpg in the report). NB: uses the
-%    pathname not the filename.     
+%   *firstlevel_model*.jpg in the doc)
 %
 % Usage
 %
@@ -20,9 +21,9 @@ function aa_jpeg_crawler(aap, path_regex)
 % into a single scrollable html document for easy review. A clickable
 % table-of-contents is generated in the left column that will jump to
 % results from the selected module. A preamble section includes the
-% provenance map (aap_prov.dot) and any text file in the root directory
-% that begins with "diagnostic_*". Not dot must be installed somewhere in
-% the shell path to convert the provenance map to jpeg for display.
+% provenance map (aap_prov.dot). Not dot must be installed somewhere in
+% the shell path to convert the provenance map to jpeg for display,
+% otherwise it will be skipped.
 %
 % Clicking on any image in the report will open the it in a new tab
 % window, which can be zoomed for inspection. The image path is displayed
@@ -31,11 +32,12 @@ function aa_jpeg_crawler(aap, path_regex)
 %
 % CHANGE HISTORY
 %
-% 12/2019 - change exclude list to include (path_regex); add "no images found"
-%           to empty section headers
+% 12/2019 - change exclude list to include (path_regex);
+%           add "no images found" to empty section headers
 % 11/2019 - include both .jpg and .jpeg files
 % 03/2019 - add exclusion list
 % 07/2018 - make sections collapsible
+% 05/2018 - new
 %
 
 savedir = pwd;
@@ -65,27 +67,8 @@ end
 % can't find dot. Try looking one other place for it...
 
 if (~exist('aap_prov.jpg','file'))
-% 	system('/usr/local/bin/dot -Tjpg aap_prov.dot > aap_prov.jpg 2>/dev/null');
 	system('/usr/local/bin/dot aap_prov.dot -Tjpg -o aap_prov.jpg 2>/dev/null');
 end
-
-% we also convert any text file beginnning with "diagnostics_*
-% in the root dir so we can include it in the report
-
-% FIX ME: save_text_as_jpeg results are not so great (kinda unreadable)
-% we should just add text as text
-
-root_diagnostic_files = dir('diagnostics_*.txt');
-
-for index = 1:numel(root_diagnostic_files)
-	fname = root_diagnostic_files(index).name;
-	[~,jname,~] = fileparts(fname);
-	jname = [ jname '.jpg' ];
-	if (~exist(jname,'file'))
-		save_text_as_jpg(fname, jname);
-	end
-end
-
 
 % make a list of all the jpg/jpegs under the directory
 %

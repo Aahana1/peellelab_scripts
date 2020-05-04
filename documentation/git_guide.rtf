@@ -1,25 +1,27 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf470
-{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;\f2\fmodern\fcharset0 Courier-Bold;
-\f3\fmodern\fcharset0 Courier-Oblique;}
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
+\f3\fmodern\fcharset0 Courier;\f4\fmodern\fcharset0 Courier-Bold;\f5\fmodern\fcharset0 Courier-Oblique;
+\f6\fswiss\fcharset0 Helvetica-BoldOblique;}
 {\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
 \margl1440\margr1440\vieww23440\viewh23880\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\b\fs34 \cf0 A Minimal Introduction to Git\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
+\f1\b0 \cf0 \
 	
-\i Git allows groups of people to work on the same documents (often code) at the same time, and without stepping \
+\f2\i Git allows groups of people to work on the same documents (often code) at the same time, and without stepping \
 	on each other's toes. It's a distributed version control system. 
-\i0 \'97 from GitHub.com\
+\f1\i0 \'97 from GitHub.com\
 \
 	Git is a popular command line tool for document version control. It can be used for any type of project, but the \
 	most common application is code development. Software version control is a difficult problem, even more-so\
 	when it involves a loosely-organized collection of developers. Git is not necessarily a perfect solution. The command	names are confusing. The syntax is inconsistent. And the documentation is not great. Much is written by people who \
 	seem to understand how to use git, but don\'92t understand how to 
-\i explain
-\i0  git. Many attempt to be comprehensive, failing\
+\f2\i explain
+\f1\i0  git. Many attempt to be comprehensive, failing\
 	to grasp that a beginner doesn\'92t need to know every command and command option, or a graph theory explanation of \
 	version control abstractions or a review of git\'92s development history.\
 \
@@ -28,7 +30,7 @@
 	There are about 100 git commands. You only need 11 of them to start using git productively:\
 \
 
-\f1 		config\
+\f3 		config\
 		init\
 		clone\
 		branch\
@@ -44,67 +46,67 @@
 \f0\b \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 	We\'92ll introduce these commands one at a time, and also have some things to say about GitHub, the cloud storage \
+\f1\b0 \cf0 	We\'92ll introduce these commands one at a time, and also have some things to say about GitHub, the cloud storage \
 	service that is typically used to host git-based projects. (Our focus here will be on 
-\i git
-\i0  the command line tool, not\
+\f2\i git
+\f1\i0  the command line tool, not\
 	GitHub the website. The two are related but not the same thing.)\
 	\
 	First, let\'92s start with the basic command syntax.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 \
+\f0\b \cf0 \
 	git Syntax\
 \
 	
-\b0 The basic syntax of a git command is as follows:\
+\f1\b0 The basic syntax of a git command is as follows:\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git command-name command-option(s)\
+\f3 \cf0 		$ git command-name command-option(s)\
 
-\f0 \
+\f1 \
 	(the \'93$\'94 is assumed to be the command-line prompt in Terminal). Not all commands have options and some\
 	have more than one. Some examples we will encounter include:\
 \
 
-\f1 		$ git init\
+\f3 		$ git init\
 		$ git add newfile.m\
 		$ git commit -m \'93here are some new changes\'94\
 		$ git commit --message \'93here are some new changes\'94\
 		$ git push origin development\
 		\
 
-\f0 	The 
-\f1 commit
-\f0  example shows two alternative ways of introducing a command option, which can be\
+\f1 	The 
+\f3 commit
+\f1  example shows two alternative ways of introducing a command option, which can be\
 	done using one dash and a one letter flag, or two dashes and the full name of the command. Typing\
 	\'93git help\'94 at any time will lead you into the on-line help for git.)\
 \
 	We now consider the eleven essential git commands.
-\f1 \
+\f3 \
 
-\f0 \
+\f1 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0 	config
-\f0\b0 \
+\f4\b \cf0 	config
+\f1\b0 \
 \
 	Before using git, it needs your name and email (these will be attached to any document changes\
 	you make so you can take credit or blame for them). You supply this information using the\
 	
-\f1 config
-\f0  command:\
+\f3 config
+\f1  command:\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git config --global user.name \'93Foo Bar\'93\
+\f3 \cf0 		$ git config --global user.name \'93Foo Bar\'93\
 		$ git config --global user.email \'93foobar@gmail.com\'94\
 
-\f0 \
+\f1 \
 	Do this once, then you can forget about the 
-\f1 config
-\f0  command. \
+\f3 config
+\f1  command. \
 \
 	It is convenient (but not necessary) to also create a "public key" that will spare you having to enter a \
 	password when interacting with GitHub (e.g., when pushing to a remote repo -- more on this later). The \
@@ -115,585 +117,585 @@
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0 	init & clone
-\f0\b0 \
+\f4\b \cf0 	init & clone
+\f1\b0 \
 \
 	Before using git to manage a document collection, you must have a collection to manage. In git terminology,\
 	this is called a 
-\i repository
-\i0 . There are two ways of generating a repository. First, you can create an empty\
+\f2\i repository
+\f1\i0 . There are two ways of generating a repository. First, you can create an empty\
 	repository from scratch using 
-\f1 init
-\f0 :\
+\f3 init
+\f1 :\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ mkdir <directory-name>\
+\f3 \cf0 		$ mkdir <directory-name>\
 		$ cd <directory-name>\
 		$ git init\
 
-\f0 \
+\f1 \
 	this creates a hidden folder in the directory called .git  which contains all the git functionality (don\'92t mess with\
 	this). Any files you create in 
-\f1 directory-name
-\f0  are now subject to git\'92s supervision. These can be anything \
+\f3 directory-name
+\f1  are now subject to git\'92s supervision. These can be anything \
 	(code, graphics, text, etc). It\'92s even possible to create multiple repositories and work with them simultaneously \
 	\'97 git will figure out which files belong to which project and manage them separately as if the other \
 	repositories don\'92t exist. \
 \
 	The 
-\f1 init
-\f0  command allows you to create a repository from scratch. More likely, however, you will copy an\
+\f3 init
+\f1  command allows you to create a repository from scratch. More likely, however, you will copy an\
 	existing repository from a remote site (probably GitHub \'97 more on GitHub later). This is done using the\
 	
-\f1 clone
-\f0  command:\
+\f3 clone
+\f1  command:\
 \
 
-\f1 		$ git clone <remote-repository-url>\
+\f3 		$ git clone <remote-repository-url>\
 
-\f0 	\
+\f1 	\
 	For example:\
 \
 
-\f1 		$ git clone https://github.com/foobar/sandbox.git\
+\f3 		$ git clone https://github.com/foobar/sandbox.git\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0 \cf0 \
+\f1 \cf0 \
 	will create a subdirectory called 
-\i sandbox
-\i0  in the working directory (or would, if the url existed, which it doesn\'92t). \
+\f2\i sandbox
+\f1\i0  in the working directory (or would, if the url existed, which it doesn\'92t). \
 	The created subdirectory includes a) the current version of files from the repository and b) the hidden .git \
 	subdirectory git uses to do its thing. These two items together define a repository.\
 \
 	Now you are ready to start using git. Add, edit, delete, and/or change files in the repository. Git will silently sit\
 	in the background, waiting for commands to tell it to version control your stuff. However, before you can \
 	understand these commands, you must first understand the git concept of a 
-\i branch
-\i0 .\
+\f2\i branch
+\f1\i0 .\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0    branch & checkout
-\f0\b0 \
+\f4\b \cf0    branch & checkout
+\f1\b0 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\i \cf0 \
+\f2\i \cf0 \
 	
-\i0 Repositories are organized around the concept of 
-\i branches
-\i0 . A repository often contains more than\
+\f1\i0 Repositories are organized around the concept of 
+\f2\i branches
+\f1\i0 . A repository often contains more than\
 	one copy of its contents \'97 this is most easily understood in the context of software development. It \
 	is common for a version of the software to exist that has been tested and intended for end-use, while \
 	a second version might be actively be undergoing development. These copies might be be stored in \
 	repository 
-\i branches
-\i0  named \'93stable\'94 and \'93development\'94. The version you want depends on your intended \
+\f2\i branches
+\f1\i0  named \'93stable\'94 and \'93development\'94. The version you want depends on your intended \
 	application: An end-user just wants a stable copy to run, whereas someone intending to fix bugs and add \
 	features needs the development copy to change.\
 \
 	Which branch do you get when you clone a repository? 
-\i All of them.* 
-\i0 This can be confusing, in that\
+\f2\i All of them.* 
+\f1\i0 This can be confusing, in that\
 	there is no indication multiple versions of files exist in the downloaded repository. Git hides these details \
 	from you, in return providing commands for selecting and working with branches.\
 \
 	* it\'92s possible to request a specific branch when cloning. See the git documentation.\
 \
 	Git provides many commands for managing branches. Here we\'92ll consider only two: The 
-\f1 branch
-\f0  command lists \
+\f3 branch
+\f1  command lists \
 	the branches defined in the local repository and the 
-\f1 checkout
-\f0  command sets the active branch (i.e., selects \
+\f3 checkout
+\f1  command sets the active branch (i.e., selects \
 	the branch in which git will record any changes you make):\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git branch\
+\f3 \cf0 		$ git branch\
 		$ git checkout <branch-name>\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0 \cf0 	\
+\f1 \cf0 	\
 	If there are multiple branches defined in the repository, the 
-\f1 branch
-\f0  command will display an asterisk next to \
+\f3 branch
+\f1  command will display an asterisk next to \
 	the active branch. (An example will be shown in a later section).\
 \
 	Note: You also use the 
-\f1 branch
-\f0  command to create new branches in your repository. See the git documentation.\
+\f3 branch
+\f1  command to create new branches in your repository. See the git documentation.\
 \
 	In what follows, we\'92ll assume you cloned a remote repository and will make changes within a single branch\
 	called \'93development.\'94 Eventually, you will upload your changes back to the remote repository in the development\
 	branch (more on uploading later). Assuming such use, 
-\f1 branch
-\f0  and 
-\f1 checkout
-\f0  are the only branch-related git \
+\f3 branch
+\f1  and 
+\f3 checkout
+\f1  are the only branch-related git \
 	commands you need to know. However, there is still some other branch weirdness to deal with. \
 \
 	By default, the 
-\f1 branch
-\f0  command only display branches your 
-\i local
-\i0  repository knows about; it doesn\'92t necessarily \
+\f3 branch
+\f1  command only display branches your 
+\f2\i local
+\f1\i0  repository knows about; it doesn\'92t necessarily \
 	know about all of the branches defined in a cloned repository. To see all branches, you must use the -a option:\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git branch -a\
+\f3 \cf0 		$ git branch -a\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0 \cf0 \
+\f1 \cf0 \
 	This will show both the local branches as well as the branches defined in the remote repository (having\
 	names like 
-\i remotes/origin/master
-\i0  or 
-\i remotes/origin/development
-\i0 ). You can then select a branch of the\
+\f2\i remotes/origin/master
+\f1\i0  or 
+\f2\i remotes/origin/development
+\f1\i0 ). You can then select a branch of the\
 	remote repository for local editing using the 
-\f1 checkout
-\f0  command. For example:\
+\f3 checkout
+\f1  command. For example:\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git checkout development\
+\f3 \cf0 		$ git checkout development\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
-\f0 \cf0 \
+\f1 \cf0 \
 	Note: You should 
-\i not
-\i0  include the 
-\i remotes/origin
-\i0  prefix when selecting a branch (doing so will generate a \
+\f2\i not
+\f1\i0  include the 
+\f2\i remotes/origin
+\f1\i0  prefix when selecting a branch (doing so will generate a \
 	\'93detached head\'94 warning \'97 see a more advanced introduction for an explanation of the head pointer).\
 \
 	
-\i Understanding \'93origin\'94 and \'93master\'94\
+\f2\i Understanding \'93origin\'94 and \'93master\'94\
 
-\i0 \
+\f1\i0 \
 	The names 
-\i origin
-\i0  and 
-\i master
-\i0  will appear when listing the branches of the remote repository (assuming the \
+\f2\i origin
+\f1\i0  and 
+\f2\i master
+\f1\i0  will appear when listing the branches of the remote repository (assuming the \
 	default names haven\'92t been changed). Git uses 
-\i origin
-\i0  as a synonym for the remote repository (i.e., the\
+\f2\i origin
+\f1\i0  as a synonym for the remote repository (i.e., the\
 	\'93origin\'94 of the files in your local repository). Likewise, 
-\i master
-\i0  is used as a synonym for the main repository\
+\f2\i master
+\f1\i0  is used as a synonym for the main repository\
 	branch (i.e., the name assigned when a repository is created before any optional branches are defined).\
 	These names will become important later when we consider commands that interact with the remote repository.\
 \
 	Let\'92s summarize: So far, you have cloned a remote repository (using 
-\f1 clone
-\f0 ) and chosen (or created) the \
+\f3 clone
+\f1 ) and chosen (or created) the \
 	development branch for editing (using 
-\f1 checkout
-\f0 ). You are now ready to start development using your local \
+\f3 checkout
+\f1 ). You are now ready to start development using your local \
 	repository. This brings us to the two workhorse commands of git: 
-\f1 add
-\f0  and 
-\f1 commit
-\f0 .\
+\f3 add
+\f1  and 
+\f3 commit
+\f1 .\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0 	add & commit
-\f0\b0 \
+\f4\b \cf0 	add & commit
+\f1\b0 \
 \
 	The 
-\f1 add
-\f0  and 
-\f1 commit
-\f0  commands are the main tools you\'92ll use to track changes to your local repository:\
+\f3 add
+\f1  and 
+\f3 commit
+\f1  commands are the main tools you\'92ll use to track changes to your local repository:\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git add <filename>\
+\f3 \cf0 		$ git add <filename>\
 		$ git commit -m \'93reason for commit\'94\
 
-\f0 \
+\f1 \
 	These commands do two simple things, neither of which is clear from the command name:\
 \
 		
-\f1 add
-\f0  means \'93notify\'94 (as in: 
-\i Hey, git, I\'92m notifying you something has changed 
-\i0 ).\
+\f3 add
+\f1  means \'93notify\'94 (as in: 
+\f2\i Hey, git, I\'92m notifying you something has changed 
+\f1\i0 ).\
 \
 		
-\f1 commit
-\f0  means \'93archive\'94 (as in: 
-\i Hey, git, archive of the current state of my repository
-\i0 ).
-\i \
+\f3 commit
+\f1  means \'93archive\'94 (as in: 
+\f2\i Hey, git, archive of the current state of my repository
+\f1\i0 ).
+\f2\i \
 
-\i0 \
+\f1\i0 \
 	The best way to clarify what these commands do is to give examples of using them:\
 \
 	\'95 You might think if you create a new file in a repository, git would notice, given that you took the time \
 	to create a repository. It doesn\'92t. You have to tell git about every file you create. You do this using 
-\f1 add
-\f0 .\
+\f3 add
+\f1 .\
 	\
 	\'95 If you change a file in a repository after adding it, you might assume git would notice that, given that you\
 	took the time to 
-\f1 add
-\f0  the file. It doesn\'92t. You have to 
-\f1 add
-\f0  the file again to get git to notice the change.\
+\f3 add
+\f1  the file. It doesn\'92t. You have to 
+\f3 add
+\f1  the file again to get git to notice the change.\
 \
 	\'95 If you delete a file in a repository, you need to tell git you deleted the file. Confusingly, you tell git about\
 	a deleted file by (wait for it) using 
-\f1 add
-\f0 .\
+\f3 add
+\f1 .\
 \
 	\'95\'a0If you rename a file in a repository, you have to 
-\f1 add
-\f0  the new filename to get git to notice it and 
-\f1 add
-\f0  the\
+\f3 add
+\f1  the new filename to get git to notice it and 
+\f3 add
+\f1  the\
 	old filename because git thinks you deleted it.\
 \
 	As such, it\'92s less confusing if you assume 
-\f1 add
-\f0  means \'93notify.\'94 Other terminology you\'92ll see includes \'93track\'94\
+\f3 add
+\f1  means \'93notify.\'94 Other terminology you\'92ll see includes \'93track\'94\
 	(git refers to files it knows about as being 
-\i tracked
-\i0 ) or \'93stage\'94 (git refers files tracked but not yet committed\
+\f2\i tracked
+\f1\i0 ) or \'93stage\'94 (git refers files tracked but not yet committed\
 	as being 
-\i staged
-\i0 .)\
+\f2\i staged
+\f1\i0 .)\
 \
 	
-\f1 commit
-\f0 \
+\f3 commit
+\f1 \
 \
 	The 
-\f1 commit
-\f0  command archives the entire state of your local repository. Think of it like any other archive utility\
+\f3 commit
+\f1  command archives the entire state of your local repository. Think of it like any other archive utility\
 	that allows you roll back to a previous state of your stuff should the need arise. Again, the command name \
 	is confusing; you 
-\f1 add
-\f0  files 
-\i individually*,
-\i0  but you 
-\f1 commit
-\f0  
-\i every
-\i0  change accumulated in your repository to-date. \
+\f3 add
+\f1  files 
+\f2\i individually*,
+\f1\i0  but you 
+\f3 commit
+\f1  
+\f2\i every
+\f1\i0  change accumulated in your repository to-date. \
 	So if you\'92re thinking 
-\f1 commit
-\f0  means \'93
-\i \'85I\'92ve tested file X thoroughly, let\'92s commit it to the repository
-\i0 \'94 that is \
+\f3 commit
+\f1  means \'93
+\f2\i \'85I\'92ve tested file X thoroughly, let\'92s commit it to the repository
+\f1\i0 \'94 that is \
 	incorrect. The 
-\f1 commit
-\f0  operation is more like taking a picture of your repository contents for future reference.\
+\f3 commit
+\f1  operation is more like taking a picture of your repository contents for future reference.\
 		\
 	* usually. You can use 
-\f1 git add -A
-\f0  to 
-\f1 add
-\f0  all modifications. In fact, its almost always better to add all,\
+\f3 git add -A
+\f1  to 
+\f3 add
+\f1  all modifications. In fact, its almost always better to add all,\
 	especially if many changes to the repository have occurred.\
 \
 
-\i 	
-\i0 The 
-\f1 commit
-\f0  command requires you provide a message explaining your reason for performing the commit \
+\f2\i 	
+\f1\i0 The 
+\f3 commit
+\f1  command requires you provide a message explaining your reason for performing the commit \
 	(e.g., \'93fixed all the spelling mistakes\'94). This message will appear, forever, in the repository log which can be \
 	viewed by anyone working on the project. For example:\
 \
 		
-\f1 $ git commit -m \'93spelling changes to compiler\'94
-\f0 \
+\f3 $ git commit -m \'93spelling changes to compiler\'94
+\f1 \
 \
 	Much has been written about the proper form and content of a good 
-\f1 commit
-\f0  message. See Google for pointers.\
+\f3 commit
+\f1  message. See Google for pointers.\
 \
 	Note: Both 
-\f1 add
-\f0  and 
-\f1 commit
-\f0  only affect your 
-\i local
-\i0  repository; interacting with a remote repository involves the\
+\f3 add
+\f1  and 
+\f3 commit
+\f1  only affect your 
+\f2\i local
+\f1\i0  repository; interacting with a remote repository involves the\
 	
-\f1 push
-\f0  and 
-\f1 pull
-\f0  commands, described later.\
+\f3 push
+\f1  and 
+\f3 pull
+\f1  commands, described later.\
 \
 	The odd behaviors of 
-\f1 add
-\f0  and 
-\f1 commit
-\f0  (and many things besides) can make it easy to lose track of the current \
+\f3 add
+\f1  and 
+\f3 commit
+\f1  (and many things besides) can make it easy to lose track of the current \
 	state of your repository. This brings us to the 
-\f1 status
-\f0  and 
-\f1 log
-\f0  commands.\
+\f3 status
+\f1  and 
+\f3 log
+\f1  commands.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	
-\f2 status & log
-\f0\b0 \
+\f0\b \cf0 	
+\f4 status & log
+\f1\b0 \
 \
 	The most helpful command in exploring the current status of your repository is 
-\f1 status
-\f0 :\
+\f3 status
+\f1 :\
 \
 		
-\f1 $ git status
-\f0 \
+\f3 $ git status
+\f1 \
 		\
 	This returns much information, the most useful being: 1) your current branch, 2) a list of uncommitted changes \
 	to tracked files, 3) a list of untracked files, and 4) a comparison of the state of your repository relative to the state \
 	of its associated remote repository (if any).\
 \
 	Uncommitted changes may just be edits you are not yet ready to 
-\f1 commit
-\f0  (because they haven\'92t been tested, etc).\
+\f3 commit
+\f1  (because they haven\'92t been tested, etc).\
 \
 	Untracked files may simply be files (or file changes or deleted files) you forgot to add. However, they may also be \
 	files you don\'92t want git to know about (for example, data files that temporarily live in the repository for testing.)\
 \
 	Note: It\'92s possible to specify files to ignore so 
-\f1 status
-\f0  will stop complaining about them. See \'93git help ignore.\'94\
+\f3 status
+\f1  will stop complaining about them. See \'93git help ignore.\'94\
 \
 	The 
-\f1 status
-\f0  command exhibits other quirks. If you edit a file and 
-\f1 add
-\f0  the change, 
-\f1 status
-\f0  will still consider your\
+\f3 status
+\f1  command exhibits other quirks. If you edit a file and 
+\f3 add
+\f1  the change, 
+\f3 status
+\f1  will still consider your\
 	branch as being \'93up-to-date\'94 relative to the origin branch (i.e., from the remote repository you cloned) even though\
 	obviously it is not. Only after you 
-\i commit
-\i0  changes will 
-\f1 status
-\f0  consider updates to have occurred (status will then\
+\f2\i commit
+\f1\i0  changes will 
+\f3 status
+\f1  consider updates to have occurred (status will then\
 	describe your branch as being 
-\i ahead
-\i0  of the origin branch). As git users say: 
-\i commit or it didn\'92t happen.
-\i0 \
+\f2\i ahead
+\f1\i0  of the origin branch). As git users say: 
+\f2\i commit or it didn\'92t happen.
+\f1\i0 \
 \
 	If 
-\f1 status
-\f0  shows you the current state of the repository, think of 
-\f1 log
-\f0  as showing you its history:\
+\f3 status
+\f1  shows you the current state of the repository, think of 
+\f3 log
+\f1  as showing you its history:\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 		$ git log
-\f0 \
+\f3 \cf0 		$ git log
+\f1 \
 \
 	The 
-\f1 log
-\f0  command shows you a list of every commit issued on the current repository, the data and time of the commit, \
+\f3 log
+\f1  command shows you a list of every commit issued on the current repository, the data and time of the commit, \
 	the name and email of the person responsible, and the reason for the commit in the form of the message text of the\
 	commit. The long hex string printed with each commit is a unique identifier git generates internally and is usually\
 	unimportant for humans. \
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0 	push & pull
-\f0\b0 \
+\f4\b \cf0 	push & pull
+\f1\b0 \
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\i \cf0 	This description of 
-\f3 push
-\f0  and 
-\f3 pull
-\f0  assumes multiple developers working on a single remote repository (called the\
+\f2\i \cf0 	This description of 
+\f5 push
+\f2  and 
+\f5 pull
+\f2  assumes multiple developers working on a single remote repository (called the\
 	\'93shared repository model on GitHub). Alternatively, each developer can work on a \'93forked\'94 copy of the remote repository\
 	(called the \'93fork and pull model\'92) which slightly changes the use of these commands. This is described in a later section.
-\i0 \
+\f1\i0 \
 \
 	The commands described thus far (
-\f1 add
-\f0 , 
-\f1 commit
-\f0 , 
-\f1 status
-\f0 , and 
-\f1 log
-\f0 ) only operate on the 
-\i local
-\i0  repository. To interact\
+\f3 add
+\f1 , 
+\f3 commit
+\f1 , 
+\f3 status
+\f1 , and 
+\f3 log
+\f1 ) only operate on the 
+\f2\i local
+\f1\i0  repository. To interact\
 	with the remote repository, you use the 
-\f1 push
-\f0  and 
-\f1 pull
-\f0  commands.\
+\f3 push
+\f1  and 
+\f3 pull
+\f1  commands.\
 \
 	The push command does what it sounds like: It \'93pushes\'94 any committed changes in your local repository into the\
 	remote repository. Note 
-\f1 push
-\f0  pushes 
-\i all
-\i0  of your changes. For example, if you cloned a remote repository having 99 files, \
+\f3 push
+\f1  pushes 
+\f2\i all
+\f1\i0  of your changes. For example, if you cloned a remote repository having 99 files, \
 	fixed spelling in 50 of them, 
-\f1 add
-\f0 -ed and 
-\f1 commit
-\f0 -ed your changes, then did a 
-\f1 push
-\f0 , the remote repository would now \
+\f3 add
+\f1 -ed and 
+\f3 commit
+\f1 -ed your changes, then did a 
+\f3 push
+\f1 , the remote repository would now \
 	contain your 50 spelling-corrected files. Long story short: 
-\f1 push
-\f0  is all or nothing.\
+\f3 push
+\f1  is all or nothing.\
 \
 	The syntax is as follows:\
 \
 
-\f1 		$ git push <remote> <remote-branch>\
+\f3 		$ git push <remote> <remote-branch>\
 
-\f0 \
+\f1 \
 	If you\'92re following along with this Introduction, this translates to:\
 \
 
-\f1 		$ git push origin development
-\f0 \
+\f3 		$ git push origin development
+\f1 \
 \
 	This \'93pushes\'94 all committed changes in your local repository into the \'93development\'94 branch of the \'93origin\'94 (the \
 	remote repository you 
-\f1 clone
-\f0 -d earlier). You don\'92t supply a message for a 
-\f1 push
-\f0  like you do in 
-\f1 commit
-\f0 . Instead, \
+\f3 clone
+\f1 -d earlier). You don\'92t supply a message for a 
+\f3 push
+\f1  like you do in 
+\f3 commit
+\f1 . Instead, \
 	when others review the changes reflected in the push they\'92ll see all every 
-\f1 commit
-\f0  message you (and others)\
+\f3 commit
+\f1  message you (and others)\
 	have included to-date.\
 \
 	Note: You will almost certainly need permission to push files to a remote repository \'97 negotiate access with the \
 	repository  owner. You may have to provide the username / password that gives you access to the remote site \
 	every push, or you can avoid this by generating an ssh key for authentication. See the documentation for 
-\i ssh-keygen
-\i0 .\
+\f2\i ssh-keygen
+\f1\i0 .\
 \
 	\ul Push: What Can Go Wrong\
 \ulnone \
 	In a word:
-\i  conflicts
-\i0 . The primary difficulty in any shared development environment is two (or more) people changing\
+\f2\i  conflicts
+\f1\i0 . The primary difficulty in any shared development environment is two (or more) people changing\
 	the same file in different ways. This can result in a
-\i  push rejection
-\i0 . You will receive an error message when you attempt\
+\f2\i  push rejection
+\f1\i0 . You will receive an error message when you attempt\
 	to push, and you will have to edit the file(s) and resolve any 
-\i merge conflicts
-\i0  and 
-\f1 push
-\f0  again.\
+\f2\i merge conflicts
+\f1\i0  and 
+\f3 push
+\f1  again.\
 \
 	Git tries to help by directing you to the problematic file contents. This will be flagged between markers like so:\
 
-\f1 \
+\f3 \
 		<<<<<<< HEAD\
 			version one of contents\
 		=======\
 			version two of contents\
 		>>>>>>>  [id]\
 
-\f0 \
+\f1 \
 	here, 
-\f1 [id]
-\f0  will be replaced with the latest commit identifier (\'93HEAD\'94 is a keyword indicating your change). Once you\
+\f3 [id]
+\f1  will be replaced with the latest commit identifier (\'93HEAD\'94 is a keyword indicating your change). Once you\
 	determine how to resolve the conflicting text, edit the file, do an 
-\f1 add
-\f0  and 
-\f1 commit
-\f0  on it, then 
-\f1 push
-\f0  again.\
+\f3 add
+\f1  and 
+\f3 commit
+\f1  on it, then 
+\f3 push
+\f1  again.\
 	\
 	Note: You can use 
-\f1 git diff
-\f0  to generate a concise summary of file conflicts. However, differences are displayed \
+\f3 git diff
+\f1  to generate a concise summary of file conflicts. However, differences are displayed \
 	using Unix 
-\f1 diff
-\f0  syntax, which is not particularly easy to decipher. See the git documentation for help.\
+\f3 diff
+\f1  syntax, which is not particularly easy to decipher. See the git documentation for help.\
 \
 	Even though git provides help for resolving merge conflicts, they are best avoided in the first place. This leads us to\
 	the 
-\f1 pull
-\f0  command, and the concept of a
-\i  pull request.
-\i0 \
+\f3 pull
+\f1  command, and the concept of a
+\f2\i  pull request.
+\f1\i0 \
 \
 	The 
-\f1 pull
-\f0  command does what it sounds like: it \'93pulls\'94 all of the changes made in the remote repository since your\
+\f3 pull
+\f1  command does what it sounds like: it \'93pulls\'94 all of the changes made in the remote repository since your\
 	last 
-\f1 pull
-\f0  (or your 
-\f1 clone
-\f0 , if you\'92ve never done a 
-\f1 pull
-\f0 ) and incorporates changes (if any) into your local repository.\
+\f3 pull
+\f1  (or your 
+\f3 clone
+\f1 , if you\'92ve never done a 
+\f3 pull
+\f1 ) and incorporates changes (if any) into your local repository.\
 	The syntax is similar to push:\
 \
 
-\f1 		$ git pull origin development\
+\f3 		$ git pull origin development\
 
-\f0 \
+\f1 \
 	(once again, assume we\'92re working within the \'93development\'94 branch of our remote repository.)\
 \
 	As with 
-\f1 push
-\f0 , there can be 
-\f1 pull
-\f0  merge conflicts; the advantage being you are able to resolve these in your\
+\f3 push
+\f1 , there can be 
+\f3 pull
+\f1  merge conflicts; the advantage being you are able to resolve these in your\
 	local repository and test them locally, rather than pushing merged changes into the remote code that may affect\
 	the entire development effort. \
 \
 	Long story short:  
-\f1 pull
-\f0  often, and always before you do a 
-\f1 push
-\f0 . Worst case scenario is you\'92ll find some unexpected \
+\f3 pull
+\f1  often, and always before you do a 
+\f3 push
+\f1 . Worst case scenario is you\'92ll find some unexpected \
 	changes you\'92ll have to merge with files in your local repository. It also helps to do a pull before starting any new\
 	code changes, to be sure you are working with the most recent file versions.\
 \
 	
-\b Pull Request
-\b0 \
+\f0\b Pull Request
+\f1\b0 \
 \
 	A 
-\i pull request
-\i0  is not a git command, it is a git practice in which a developer informs other developers working\
+\f2\i pull request
+\f1\i0  is not a git command, it is a git practice in which a developer informs other developers working\
 	on a project they have pushed changes, so everybody should do a 
-\f1 pull
-\f0  to update their local repositories (the\
+\f3 pull
+\f1  to update their local repositories (the\
 	term 
-\i push notification
-\i0  would be less confusing, with the assumption other developers will respond by doing \
+\f2\i push notification
+\f1\i0  would be less confusing, with the assumption other developers will respond by doing \
 	a 
-\f1 pull
-\f0 ). The idea is to avoid push conflicts later by encouraging everyone to resolve potential code conflicts \
+\f3 pull
+\f1 ). The idea is to avoid push conflicts later by encouraging everyone to resolve potential code conflicts \
 	ASAP, rather than allowing their local repository to become ever more out-of-date.\
 \
 	
-\b Pull Request on GitHub (Also: GitHub)
-\b0 \
+\f0\b Pull Request on GitHub (Also: GitHub)
+\f1\b0 \
 \
 	There are many ways of issuing a pull request, including email or a phone call. However, on GitHub there\'92s\
 	literally a \'93pull request\'94 button. \
@@ -704,10 +706,10 @@
 	hosts git repositories (and only git repositories). The site provides GUI access to most (all?) of the git functionality \
 	and also provides additional services like tutorials and wiki hosting, but in this Introduction we\'92ll view GitHub as\
 	simply hosting a remote repository someone has created that you are 
-\f1 push
-\f0 -ing, and 
-\f1 pull
-\f0 -ing content to/from your\
+\f3 push
+\f1 -ing, and 
+\f3 pull
+\f1 -ing content to/from your\
 	local clone. Like it or not, most of your interaction with GitHub will be though the git command line interface.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx10655\pardirnatural\partightenfactor0
@@ -717,18 +719,18 @@
 	onto your GitHub account, navigate to the repository / branch in question, and click the \'93new pull request\'94 button. \
 	This brings up a dialog box where you summarize all the changes reflected in your push\'97 remember: you \
 	push 
-\i all
-\i0  commits since your last 
-\f1 push
-\f0 , and each commit probably includes several individual file changes, so \
+\f2\i all
+\f1\i0  commits since your last 
+\f3 push
+\f1 , and each commit probably includes several individual file changes, so \
 	the description in your pull request should explain the overall changes (you can always go back and edit it later).\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
 	Once you submit the pull request, other developers working on the project get a chance to comment on your changes\
 	(there\'92s an option to be automatically notified by GitHub when a pull request is made). After any complaints are \
 	addressed, the repository owner (or someone  with owner permission) will 
-\i merge
-\i0  your changes and the process \
+\f2\i merge
+\f1\i0  your changes and the process \
 	starts all over again.\
 \
 	Note: Each developer can only have one pull request open at a time. You can commit additional changes but these \
@@ -745,20 +747,20 @@
 	prevents the merge of those files with the parent branch. Yet, overwriting files in a push might also be undesirable.\
 \
 	As such, it is common practice on GitHub for each developer on a project to create a 
-\i copy
-\i0  of the \'93master\'94 repository\
+\f2\i copy
+\f1\i0  of the \'93master\'94 repository\
 	and work on that. The copy is also stored on GitHub \'97 you 
-\f1 clone
-\f0  your copy to work on locally. You make changes,\
+\f3 clone
+\f1  your copy to work on locally. You make changes,\
 	do 
-\f1 adds
-\f0  and 
-\f1 commits
-\f0 , then 
-\f1 push
-\f0  
-\i to your copy
-\i0  and not the master repository. This inserts another layer between\
+\f3 adds
+\f1  and 
+\f3 commits
+\f1 , then 
+\f3 push
+\f1  
+\f2\i to your copy
+\f1\i0  and not the master repository. This inserts another layer between\
 	your edits and the final code, and incorporating changes requires a slightly different kind of pull request.\
 \
 	Note: I\'92ve used the term \'93master\'94 repository to refer to the repository we copy, but \'93master\'94 is also a git keyword\
@@ -766,18 +768,18 @@
 	commonly called in GitHub documentation). You work on a copy, but the original repo exists somewhere \'93upstream.\'94\
 \
 	Which brings us to 
-\i forking
-\i0 .\
+\f2\i forking
+\f1\i0 .\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	Forking \
+\f0\b \cf0 	Forking \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
+\f1\b0 \cf0 \
 	The process of creating your own copy of someone else\'92s repository is called 
-\i forking
-\i0 . You fork a repository on GitHub \
+\f2\i forking
+\f1\i0 . You fork a repository on GitHub \
 	using the fork button, located at upper right on the repository home page. The forked repository behaves like any other \
 	remote repository with respect to the commands we have considered. After forking, the first thing you will probably want \
 	to do is clone your forked copy to create local code you can begin editing.\
@@ -785,8 +787,8 @@
 	Note: You must be logged into GitHub to fork. Also, you cannot fork a repository you own.\
 \
 	
-\i Pull Requests and Forking
-\i0 \
+\f2\i Pull Requests and Forking
+\f1\i0 \
 \
 	If you\'92ve taken the trouble to fork (i.e., copy) a repository, it\'92s likely you will be the only person making changes to it\
 	(\'93it\'94 being the copy). As such, forking changes the nature of the pull request. A  PR no longer informs other members\
@@ -801,23 +803,23 @@
 	other members of your development team.\
 \
 	To generate a pull request, navigate to the upstream repository page on GitHub and click 
-\i New Pull Request
-\i0  to go to its\
+\f2\i New Pull Request
+\f1\i0  to go to its\
 	pull request page. Click 
-\i compare across forks
-\i0 , and select the upstream and forked repositories to merge. The 
-\i head
-\i0  \
+\f2\i compare across forks
+\f1\i0 , and select the upstream and forked repositories to merge. The 
+\f2\i head
+\f1\i0  \
 	
-\i fork
-\i0  is the your copy and the 
-\i base
-\i0  
-\i fork
-\i0  is the original (i.e., the merge goes right to left). You can even select different\
+\f2\i fork
+\f1\i0  is the your copy and the 
+\f2\i base
+\f1\i0  
+\f2\i fork
+\f1\i0  is the original (i.e., the merge goes right to left). You can even select different\
 	branches in each repository to merge. Click 
-\i Create pull request
-\i0 , enter the requested information, and submit.\
+\f2\i Create pull request
+\f1\i0 , enter the requested information, and submit.\
 \
 	Note: You can also generate the pull request from your forked repository page, although the GUI changes slightly\
 	from that just described.\
@@ -827,8 +829,8 @@
 	then delete the fork, or continue development, or create new branches \'97 whatever best suits the project.\
 \
 	
-\i Keeping your Forked Repository Synched with the Upstream
-\i0 \
+\f2\i Keeping your Forked Repository Synched with the Upstream
+\f1\i0 \
 \
 	You do a PR to get changes from your fork merged into the upstream. But the upstream repo might be merging changes \
 	from forked copies created by many developers. We would like to keep our fork up-to-date as other changes are merged.\
@@ -837,117 +839,117 @@
 \
 	Git already knows about our forked repository (we told it the url when we did a clone). What we now need to do is\
 	tell git about the upstream repository \'97 the repo we forked. We do this with 
-\f1 remote add
-\f0 :\
+\f3 remote add
+\f1 :\
 \
 
-\f1 		$ git remote add upstream https://github.com/whatever/name-of-upstream-repo.git\
+\f3 		$ git remote add upstream https://github.com/whatever/name-of-upstream-repo.git\
 
-\f0 \
+\f1 \
 	This adds an identifier \'93upstream.\'94 Updating our fork is a straightforward two-step process. First, pull from the upstream:\
 \
 
-\f1 		$ git pull upstream master\
+\f3 		$ git pull upstream master\
 
-\f0 \
+\f1 \
 	Now our clone is up-to-date with the upstream (here I assumed a single \'93master\'94 branch). Second, push to our fork:\
 \
 
-\f1 		$ git push origin master\
+\f3 		$ git push origin master\
 
-\f0 \
+\f1 \
 	Now our fork is up-to-date with our clone, and because the clone is up-to-date with the upstream, our fork\
 	is now also up-to-date with the upstream.\
 \
 	Note: \'93upstream\'94 is arbitrary; you can use any name you like (but most people use upstream).\
 \
 	Note: The abbreviated command "
-\f1 git push
-\f0 " 
-\i probably
-\i0  means "push the current branch to the current branch\
+\f3 git push
+\f1 " 
+\f2\i probably
+\f1\i0  means "push the current branch to the current branch\
 	in the origin." The qualifier is needed because the git defaults can be configured to do something else. It's\
 	probably best to always explicitly provide the remote and branch names when pushing.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	Addendum: The 
-\i merge
-\i0  command\
+\f0\b \cf0 	Addendum: The 
+\f6\i merge
+\f0\i0  command\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
+\f1\b0 \cf0 \
 	The workflow model in this document has been that of cloning a remote (possibly forked) repository, making local\
 	changes, then pushing back to the origin and opening a pull request. As such, we have omitted a discussion of the\
 	
-\i merge
-\i0  command (because there was no need for it). However, the command is important for general git workflow,\
+\f2\i merge
+\f1\i0  command (because there was no need for it). However, the command is important for general git workflow,\
 	so a brief mention should be included.\
 \
 	The merge command syntax is as follows:\
  \
 
-\f1 		$ git merge branch-name\
+\f3 		$ git merge branch-name\
 \
 
-\f0 	where 
-\f1 branch-name
-\f0  is a branch you created in the repo. The effect is to merge all changes in this branch\
+\f1 	where 
+\f3 branch-name
+\f1  is a branch you created in the repo. The effect is to merge all changes in this branch\
 	with the current (i.e., checked-out) branch. We can make this explicit with a slightly longer example:\
  \
 
-\f1 		$ git branch quickfix\
+\f3 		$ git branch quickfix\
 		$ git checkout quickfix\
 		< edit files, add and commit changes >\
 		$ git checkout master\
 		$ git merge quickfix\
 
-\f0 \
+\f1 \
 	Just as in 
-\f1 push
-\f0 , there can be conflicts when merging. Resolution is similar in both cases.\
+\f3 push
+\f1 , there can be conflicts when merging. Resolution is similar in both cases.\
 \
 	If you are using a forking workflow model, you create your new branch in your local repo as above, then push\
 	the branch to your forked (i.e., remote) repo, in the process creating a new branch in the fork. This is done\
 	using the push -u option:\
 \
 
-\f1 		$ git branch quickfix\
+\f3 		$ git branch quickfix\
 		$ git checkout quickfix\
 		< edit files, add and commit changes >\
 		$ git push 
-\f2\b -u origin
-\f1\b0  quickfix\
+\f4\b -u origin
+\f3\b0  quickfix\
 \
 
-\f0 	This will create a "quickfix" branch in the remote. You can then select this branch in any subsequent pull \
+\f1 	This will create a "quickfix" branch in the remote. You can then select this branch in any subsequent pull \
 	request sent to the upstream. If you push new changes to your forked repo while the pull request is open, \
 	Github will automatically append them to the PR. (Don't use the -u option to push additional changes. If\
 	you make changes to the code on the quickfix branch after doing 
-\f1 $ git push -u origin quickfix
-\f0 ,\
+\f3 $ git push -u origin quickfix
+\f1 ,\
 	just do 
-\f1 $ git push origin quickfix
-\f0  to push the new changes.)\
+\f3 $ git push origin quickfix
+\f1  to push the new changes.)\
 \
 	Finally, you should delete the branch after it has been merged:\
 \
 
-\f1 		$ git branch -d quickfix\
+\f3 		$ git branch -d quickfix\
 
-\f0 \
+\f1 \
 	
-\i Important
-\i0 : GitHub occasionally drops support of old(er) browser versions. This can make your repo act strangely\
+\f2\i Important
+\f1\i0 : GitHub occasionally drops support of old(er) browser versions. This can make your repo act strangely\
 	(e.g., branches may be missing in the branch pull-down menu). Always use a supported browser when iteracting\
 	with your (or any) repo.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	Conclusion\
+\f0\b \cf0 	Conclusion\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
+\f1\b0 \cf0 \
 	Version control for distributed software development is a hard problem and git is not a perfect solution. However, \
 	thousands of developers currently use the tool. Furthermore, GitHub.com tries to make using git as painless as \
 	possible, offering free hosting of git repositories, an active developer community, and additional resources for\
@@ -959,67 +961,261 @@
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	Recommended Reading\
+\f0\b \cf0 	Recommended Reading\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
+\f1\b0 \cf0 \
 	
-\i Git For Humans
-\i0 , by David Demaree (A Book Apart publications) is a readable introduction to git. The definitive\
+\f2\i Git For Humans
+\f1\i0 , by David Demaree (A Book Apart publications) is a readable introduction to git. The definitive\
 	guide is 
-\i Pro Git
-\i0 , written by Scott Chacon and Ben Straub (Apress) and is available on-line at git-scm.com.\
+\f2\i Pro Git
+\f1\i0 , written by Scott Chacon and Ben Straub (Apress) and is available on-line at git-scm.com.\
+\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 	Appendix \'97 Example git\
+\f0\b \cf0 	Appendix A \'97 Git Scenarios\
 \
 	
-\b0 Little about git will make sense until you see it in action (ideally using git yourself). As such, some basic usage\
+\f1\b0 A brief list of tasks/tricks you may find useful if you work with git long enough.\
+\
+	1) 
+\f0\b Add changes to an open PR
+\f1\b0 \
+\
+		i) checkout the branch of the open PR in your local repo\
+		ii) make whatever changes to the file(s) in the branch\
+		iii) push the branch to your fork\
+\
+	GitHub will automatically add the changes to the open PR. No other action is required.\
+\
+\
+	2) 
+\f0\b Updating your fork after a PR has been accepted\
+\
+	
+\f1\b0 There are several ways to do this; it's probably best to simply do a pull/push from\
+	the upstream (see previous section on defining an upstream for your fork):\
+\
+		i) cd into your local repo of the fork\ul  and checkout the branch of the PR\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \ulnone \
+		ii) Do:
+\f3  $ git pull upstream master\
+
+\f1 \
+	Now the local repo is up-to-date with the upstream (here I assumed our PR \
+	was merged into the \'93master\'94 branch). To update the fork, do a push:\
+\
+
+\f3 		$ git push origin master\
+
+\f1 \
+	Your fork now includes all of the code that went into the PR (potentially including\
+	changes made by others). You can now delete the PR branch. You also do this from \
+	the repo. Check out the master branch in your repo, then do:\
+\
+		iii) 
+\f3 git branch -d [name-of-PR-branch]
+\f1 \
+		iv) 
+\f3 git push origin master
+\f1 \
+\
+\
+	
+\f0\b 3)
+\f1\b0  
+\f0\b Get a listing of all of the changes you made since the last commit\
+\
+
+\f1\b0 		
+\f3 $ git diff\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 	The output is Unix 
+\f3 diff
+\f1  syntax and is not particularly easy to decypher.\
+\
+	If you just want to know what files have been changed without listing the\
+	details, use the name-only option:\
+\
+		
+\f3 $ git diff --name-only\
+\
+
+\f1 	Note the double hyphen ('--') before the option name.\
+\
+\
+	
+\f0\b 4)
+\f1\b0  
+\f0\b Discard changes you have made to a file\
+\
+	
+\f2\i\b0 Warning: Although some of the following operations can\
+	be undone, proceed asssuming they cannot. Make sure \
+	you are certain you want to lose your changes.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\i0\b \cf0 \
+	
+\f1\b0 Discarding an edit depends on whether the file has been staged or not.\
+\
+	If the file is NOT staged (i.e., you haven't done a 
+\f3 git
+\f1  
+\f3 add
+\f1  since\
+	making the change), use 
+\f3 checkout
+\f1 :\
+\
+		
+\f3 $ git checkout [filename]\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1 \cf0 \
+	Yes that's the same command you use to switch branches. No, it \
+	doesn't make any sense.\
+\
+	If you've already staged the file, there's several options. The simplest\
+	is to unstage, then use the checkout command:\
+\
+		
+\f3 $ git reset\
+\
+
+\f1 	The file is now unstaged, but still contains changes. Use  
+\f3 checkout
+\f1  \
+	to undo the changes. You can combine these two operations using the\
+	"hard" option:\
+\
+		
+\f3 $ git reset --hard\
+
+\f1 	\
+	The reset command is simple, but it unstages 
+\f2\i everything
+\f1\i0 . To unstage\
+	a single file, include the HEAD syntax:\
+\
+		
+\f3 $ git reset HEAD [filename]\
+
+\f1 \
+	No, the HEAD syntax doesn't make any sense.\
+\
+	Note the hard option is not available for individual files.\
+\
+	There are ways to abort changes in a way that you can recover\
+	the aborted changes if you change your mind a second time. See\
+	on-line resources for help.
+\f0\b \
+
+\f1\b0 \
+\
+	
+\f0\b 5)
+\f1\b0  
+\f0\b Copy a changed file into another branch\
+
+\f1\b0 \
+	Sometimes you fix or make changes to a file that would be useful to copy\
+	in other branches of the repo but you don't want to do a merge (because \
+	that would overwrite all changed files). \
+\
+	This can be done using the checkout command.\
+\
+	In this example, assume you have a file
+\f3  foo.txt 
+\f1 in both branch_one and\
+	branch_two of your repo, and you've made changes to the version in branch_two.\
+\
+	To replace the version of foo.txt in branch_one with the version in branch_two:\
+\
+		i) checkout branch_one\
+\
+		ii) if necessary, cd into the repo directory where 
+\f3 foo.txt
+\f1  lives.\
+\
+		iii) do: 
+\f3 $
+\f1   
+\f3 git checkout branch_two foo.txt\
+
+\f1 \
+	Examining the contents will show that 
+\f3 foo.txt
+\f1  in branch_one has been updated\
+	and a 
+\f3 git status
+\f1  will now show 
+\f3 foo.txt 
+\f1 is staged and ready to be commited.\
+\
+	Note command (iii)  does NOT checkout branch_two, even though the checkout \
+	command was used.\
+\
+	You may now do a commit, or continue to make other changes in branch_one.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0  \
+\
+	Appendix B \'97 Example git\
+\
+	
+\f1\b0 Little about git will make sense until you see it in action (ideally using git yourself). As such, some basic usage\
 	is demonstrated in this appendix. We will clone a remote repository, modify and create some files, 
-\f1 add
-\f0  and 
-\f1 commit
-\f0  \
+\f3 add
+\f1  and 
+\f3 commit
+\f1  \
 	he changes, then 
-\f1 push
-\f0  the changes back to the remote repository.* \
+\f3 push
+\f1  the changes back to the remote repository.* \
 \
 	* You should be able to clone the repository listed here (anyone can clone any public repository on GitHub), but\
 	you won\'92t be able to push changes to it unless you have permission (also, if you are intending to replicate these\
 	commands yourself, remember you will first need to use 
-\f1 config
-\f0  to supply a name and email to git). Also, I created \
+\f3 config
+\f1  to supply a name and email to git). Also, I created \
 	a \'93development\'94 branch in this repository because \'97 as mentioned earlier \'97 its likely you will work on a some kind\
 	of a development branch (sometimes just called \'93devel\'94 or \'93dev\'94) in a typical project.\
 \
 	Finally, because editing is difficult to show in a command line example, file changes are made here using the Unix \
 	command 
-\f1 echo
-\f0 . For example, the command 
-\f1 $ echo \'93here is some text\'94 >> foo.txt 
-\f0 creates the file \
+\f3 echo
+\f1 . For example, the command 
+\f3 $ echo \'93here is some text\'94 >> foo.txt 
+\f1 creates the file \
 	foo.txt if it doesn\'92t exist, or appends the line 
-\i here is some text 
-\i0 to the file if it does.\
+\f2\i here is some text 
+\f1\i0 to the file if it does.\
 \
 	Typed commands are in boldface; all other text is returned by the system.
-\f1 \
+\f3 \
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\b \cf0 	$ cd ~\
+\f4\b \cf0 	$ cd ~\
 	$ git clone https://github.com/jones-michael-s/sandbox.git
-\f1\b0 \
+\f3\b0 \
 	Cloning into 'sandbox'...\
 	remote: Counting objects: 57, done.\
 	remote: Compressing objects: 100% (35/35), done.\
 	remote: Total 57 (delta 12), reused 30 (delta 5), pack-reused 0\
 	Unpacking objects: 100% (57/57), done.\
 
-\f2\b 	$ cd sandbox\
+\f4\b 	$ cd sandbox\
 	$ ls -la
-\f1\b0 \
+\f3\b0 \
 	drwxr-xr-x  14    staff  476 May  8 11:44 .\
 	drwxr-xr-x   3    staff  102 May  8 11:41 ..\
 	drwxr-xr-x  13    staff  442 May  8 11:44 .git\
@@ -1034,31 +1230,31 @@
 	-rw-r--r--   1    staff   14 May  8 11:44 foo.txt\
 	drwxr-xr-x   3    staff  102 May  8 11:41 graphics\
 
-\f2\b 	$ git branch
-\f1\b0 \
+\f4\b 	$ git branch
+\f3\b0 \
 	* master\
 
-\f2\b 	$ git branch -a
-\f1\b0 \
+\f4\b 	$ git branch -a
+\f3\b0 \
 	* master\
 	remotes/origin/HEAD -> origin/master\
 	remotes/origin/development\
 	remotes/origin/master\
 
-\f2\b 	$ git checkout development
-\f1\b0 \
+\f4\b 	$ git checkout development
+\f3\b0 \
 	Branch development set up to track remote branch development from origin.\
 	Switched to a new branch 'development'\
 
-\f2\b 	$ git status
-\f1\b0 \
+\f4\b 	$ git status
+\f3\b0 \
 	On branch development\
 	Your branch is up-to-date with 'origin/development'.\
 	nothing to commit, working tree clean\
 
-\f2\b 	$ echo "here's another line" >> file-1.txt\
+\f4\b 	$ echo "here's another line" >> file-1.txt\
 	$ git status
-\f1\b0 \
+\f3\b0 \
 	On branch development\
 	Your branch is up-to-date with 'origin/development'.\
 	Changes not staged for commit:\
@@ -1069,9 +1265,9 @@
 \
 	no changes added to commit (use "git add" and/or "git commit -a")\
 
-\f2\b 	$ git add file-1.txt\
+\f4\b 	$ git add file-1.txt\
 	$ git status
-\f1\b0 \
+\f3\b0 \
 	On branch development\
 	Your branch is up-to-date with 'origin/development'.\
 	Changes to be committed:\
@@ -1080,9 +1276,9 @@
 		modified:   file-1.txt\
 \
 
-\f2\b 	$ echo "creating a new file" >> new-file.txt\
+\f4\b 	$ echo "creating a new file" >> new-file.txt\
 	$ ls -la
-\f1\b0 \
+\f3\b0 \
 		drwxr-xr-x  14    staff  476 May  8 11:44 .\
 		drwxr-xr-x   3    staff  102 May  8 11:41 ..\
 		drwxr-xr-x  13    staff  442 May  8 11:44 .git\
@@ -1098,8 +1294,8 @@
 		drwxr-xr-x   3    staff  102 May  8 11:41 graphics\
 		-rw-r--r--   1    staff   20 May  8 11:44 new-file.txt\
 
-\f2\b 	$ git status
-\f1\b0 \
+\f4\b 	$ git status
+\f3\b0 \
 	On branch development\
 	Your branch is up-to-date with 'origin/development'.\
 	Changes to be committed:\
@@ -1113,11 +1309,11 @@
 		new-file.txt\
 \
 
-\f2\b 	$ git add new-file.txt
-\f1\b0 \
+\f4\b 	$ git add new-file.txt
+\f3\b0 \
 
-\f2\b 	$ git status
-\f1\b0 \
+\f4\b 	$ git status
+\f3\b0 \
 	On branch development\
 	Your branch is up-to-date with 'origin/development'.\
 	Changes to be committed:\
@@ -1127,21 +1323,21 @@
 		new file:   new-file.txt\
 \
 
-\f2\b 	$ git commit -m "changes to file-1 and added new-file"
-\f1\b0 \
+\f4\b 	$ git commit -m "changes to file-1 and added new-file"
+\f3\b0 \
 	[development 842806f] changes to file-1 and added new-file\
 	2 files changed, 2 insertions(+)\
 	create mode 100644 new-file.txt\
 
-\f2\b 	$ git status
-\f1\b0 \
+\f4\b 	$ git status
+\f3\b0 \
 	On branch development\
 	Your branch is ahead of 'origin/development' by 1 commit.\
 	(use "git push" to publish your local commits)\
 	nothing to commit, working tree clean\
 
-\f2\b 	$ git push origin development
-\f1\b0 \
+\f4\b 	$ git push origin development
+\f3\b0 \
 	Counting objects: 4, done.\
 	Delta compression using up to 4 threads.\
 	Compressing objects: 100% (3/3), done.\
@@ -1151,8 +1347,8 @@
 	To https://github.com/jones-michael-s/sandbox.git\
 	7394092..842806f  development -> development\
 
-\f2\b 	$ git log
-\f1\b0 \
+\f4\b 	$ git log
+\f3\b0 \
 	commit 842806f4fb2c30be428c01f6c11e834c94725c52\
 	Author: Mike Jones <jones.mike@wustl.edu>\
 	Date:   Mon May 8 11:43:58 2017 -0500\
@@ -1169,7 +1365,7 @@
 	< etc\'85 >\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0 \cf0 \
+\f1 \cf0 \
 \
 \
 }

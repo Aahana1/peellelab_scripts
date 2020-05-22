@@ -29,8 +29,9 @@
 \
 	There are about 100 git commands. You only need 11 of them to start using git productively:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		config\
+\f3 \cf0 		config\
 		init\
 		clone\
 		branch\
@@ -64,20 +65,23 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f3 \cf0 		$ git command-name command-option(s)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	(the \'93$\'94 is assumed to be the command-line prompt in Terminal). Not all commands have options and some\
 	have more than one. Some examples we will encounter include:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git init\
+\f3 \cf0 		$ git init\
 		$ git add newfile.m\
 		$ git commit -m \'93here are some new changes\'94\
 		$ git commit --message \'93here are some new changes\'94\
 		$ git push origin development\
 		\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 	The 
+\f1 \cf0 	The 
 \f3 commit
 \f1  example shows two alternative ways of introducing a command option, which can be\
 	done using one dash and a one letter flag, or two dashes and the full name of the command. Typing\
@@ -102,8 +106,9 @@
 
 \f3 \cf0 		$ git config --global user.name \'93Foo Bar\'93\
 		$ git config --global user.email \'93foobar@gmail.com\'94\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	Do this once, then you can forget about the 
 \f3 config
 \f1  command. \
@@ -133,8 +138,9 @@
 \f3 \cf0 		$ mkdir <directory-name>\
 		$ cd <directory-name>\
 		$ git init\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	this creates a hidden folder in the directory called .git  which contains all the git functionality (don\'92t mess with\
 	this). Any files you create in 
 \f3 directory-name
@@ -151,14 +157,17 @@
 \f3 clone
 \f1  command:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git clone <remote-repository-url>\
+\f3 \cf0 		$ git clone <remote-repository-url>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 	\
+\f1 \cf0 	\
 	For example:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git clone https://github.com/foobar/sandbox.git\
+\f3 \cf0 		$ git clone https://github.com/foobar/sandbox.git\
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
 \f1 \cf0 \
@@ -318,8 +327,9 @@
 
 \f3 \cf0 		$ git add <filename>\
 		$ git commit -m \'93reason for commit\'94\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	These commands do two simple things, neither of which is clear from the command name:\
 \
 		
@@ -405,8 +415,9 @@
 \f1  all modifications. In fact, its almost always better to add all,\
 	especially if many changes to the repository have occurred.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f2\i 	
+\f2\i \cf0 	
 \f1\i0 The 
 \f3 commit
 \f1  command requires you provide a message explaining your reason for performing the commit \
@@ -565,12 +576,14 @@
 \
 
 \f3 		$ git push <remote> <remote-branch>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	If you\'92re following along with this Introduction, this translates to:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git push origin development
+\f3 \cf0 		$ git push origin development
 \f1 \
 \
 	This \'93pushes\'94 all committed changes in your local repository into the \'93development\'94 branch of the \'93origin\'94 (the \
@@ -593,7 +606,8 @@
 \f1\i0 .\
 \
 	\ul Push: What Can Go Wrong\
-\ulnone \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \ulnone \
 	In a word:
 \f2\i  conflicts
 \f1\i0 . The primary difficulty in any shared development environment is two (or more) people changing\
@@ -607,15 +621,17 @@
 \f1  again.\
 \
 	Git tries to help by directing you to the problematic file contents. This will be flagged between markers like so:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 \
+\f3 \cf0 \
 		<<<<<<< HEAD\
 			version one of contents\
 		=======\
 			version two of contents\
 		>>>>>>>  [id]\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	here, 
 \f3 [id]
 \f1  will be replaced with the latest commit identifier (\'93HEAD\'94 is a keyword indicating your change). Once you\
@@ -653,10 +669,12 @@
 \f1 ) and incorporates changes (if any) into your local repository.\
 	The syntax is similar to push:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git pull origin development\
+\f3 \cf0 		$ git pull origin development\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	(once again, assume we\'92re working within the \'93development\'94 branch of our remote repository.)\
 \
 	As with 
@@ -807,18 +825,13 @@
 \f1\i0  to go to its\
 	pull request page. Click 
 \f2\i compare across forks
-\f1\i0 , and select the upstream and forked repositories to merge. The 
-\f2\i head
-\f1\i0  \
-	
-\f2\i fork
-\f1\i0  is the your copy and the 
-\f2\i base
-\f1\i0  
-\f2\i fork
-\f1\i0  is the original (i.e., the merge goes right to left). You can even select different\
-	branches in each repository to merge. Click 
-\f2\i Create pull request
+\f1\i0 . Two buttons appear that allow you to select the to-be merged code\
+	(a branch from your fork) and the "merge-into" location (a branch in the upstream repo). Note there can be quite\
+	a few branches listed in each of these menus, so choose carefully. Note carefully: the merge goes from the right button\
+	\ul to\ulnone  the left button (note the little arrow). Again, choose the two branches carefully.\
+	\
+	Finally, click 
+\f2\i create pull request
 \f1\i0 , enter the requested information, and submit.\
 \
 	Note: You can also generate the pull request from your forked repository page, although the GUI changes slightly\
@@ -842,22 +855,28 @@
 \f3 remote add
 \f1 :\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git remote add upstream https://github.com/whatever/name-of-upstream-repo.git\
+\f3 \cf0 		$ git remote add upstream https://github.com/whatever/name-of-upstream-repo.git\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	This adds an identifier \'93upstream.\'94 Updating our fork is a straightforward two-step process. First, pull from the upstream:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git pull upstream master\
+\f3 \cf0 		$ git pull upstream master\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	Now our clone is up-to-date with the upstream (here I assumed a single \'93master\'94 branch). Second, push to our fork:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git push origin master\
+\f3 \cf0 		$ git push origin master\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	Now our fork is up-to-date with our clone, and because the clone is up-to-date with the upstream, our fork\
 	is now also up-to-date with the upstream.\
 \
@@ -888,23 +907,34 @@
 \
 	The merge command syntax is as follows:\
  \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git merge branch-name\
+\f3 \cf0 		$ git merge branch-name\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 	where 
+\f1 \cf0 	where 
 \f3 branch-name
 \f1  is a branch you created in the repo. The effect is to merge all changes in this branch\
 	with the current (i.e., checked-out) branch. We can make this explicit with a slightly longer example:\
  \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git branch quickfix\
+\f3 \cf0 		$ git branch quickfix\
 		$ git checkout quickfix\
 		< edit files, add and commit changes >\
 		$ git checkout master\
 		$ git merge quickfix\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
+	Note the merge goes into the currently checked-out branch. Do a 
+\f3 git status
+\f1  or 
+\f3 git branch
+\f1  to be sure you\
+	are working on the intended branch one last time before doing the merge. \
+\
 	Just as in 
 \f3 push
 \f1 , there can be conflicts when merging. Resolution is similar in both cases.\
@@ -913,16 +943,18 @@
 	the branch to your forked (i.e., remote) repo, in the process creating a new branch in the fork. This is done\
 	using the push -u option:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git branch quickfix\
+\f3 \cf0 		$ git branch quickfix\
 		$ git checkout quickfix\
 		< edit files, add and commit changes >\
 		$ git push 
 \f4\b -u origin
 \f3\b0  quickfix\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 	This will create a "quickfix" branch in the remote. You can then select this branch in any subsequent pull \
+\f1 \cf0 	This will create a "quickfix" branch in the remote. You can then select this branch in any subsequent pull \
 	request sent to the upstream. If you push new changes to your forked repo while the pull request is open, \
 	Github will automatically append them to the PR. (Don't use the -u option to push additional changes. If\
 	you make changes to the code on the quickfix branch after doing 
@@ -934,10 +966,12 @@
 \
 	Finally, you should delete the branch after it has been merged:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git branch -d quickfix\
+\f3 \cf0 		$ git branch -d quickfix\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	
 \f2\i Important
 \f1\i0 : GitHub occasionally drops support of old(er) browser versions. This can make your repo act strangely\
@@ -980,15 +1014,34 @@
 	
 \f1\b0 A brief list of tasks/tricks you may find useful if you work with git long enough.\
 \
-	1) 
-\f0\b Add changes to an open PR
+	1a) 
+\f0\b Add changes to a PR you opened
 \f1\b0 \
+\
+	This may be necesary if you or others have found bugs in your PR that need to	be fixed. The process is straightforward:\
 \
 		i) checkout the branch of the open PR in your local repo\
 		ii) make whatever changes to the file(s) in the branch\
 		iii) push the branch to your fork\
 \
 	GitHub will automatically add the changes to the open PR. No other action is required.\
+\
+\
+	1b) 
+\f0\b Add changes to an PR that
+\f6\i  isn't yours
+\f1\i0\b0 \
+\
+	You can also make changes to a PR opened by someone else. A common application\
+	is  fixing bugs you discover when testing a PR. You may simply inform the PR owner \
+	of the problem and allow them to fix the code. However, if the fix is obvious or simple, \
+	you might just do it yourself.\
+\
+	The process follows the same workflow as opening a PR described in an earlier section.\
+	However, instead of submitting the PR to the main repo, you submit it to the 
+\f2\i fork
+\f1\i0  of the\
+	open PR. The other steps are exactly the same.\
 \
 \
 	2) 
@@ -1008,10 +1061,12 @@
 	Now the local repo is up-to-date with the upstream (here I assumed our PR \
 	was merged into the \'93master\'94 branch). To update the fork, do a push:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git push origin master\
+\f3 \cf0 		$ git push origin master\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \
+\f1 \cf0 \
 	Your fork now includes all of the code that went into the PR (potentially including\
 	changes made by others). You can now delete the PR branch. You also do this from \
 	the repo. Check out the master branch in your repo, then do:\
@@ -1115,10 +1170,14 @@
 \
 	There are ways to abort changes in a way that you can recover\
 	the aborted changes if you change your mind a second time. See\
-	on-line resources for help.
-\f0\b \
-
-\f1\b0 \
+	on-line resources for help.\
+\
+	Note you can 
+\f2\i undelete
+\f1\i0  files using these commands (git treats every change as "adding"\
+	to the repo, so think deleting a file as adding a "negative" file). The deleted file will\
+	appear in the output of a status command; use checkout or reset as appropriate.\
+\
 \
 	
 \f0\b 5)

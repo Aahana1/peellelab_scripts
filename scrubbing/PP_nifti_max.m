@@ -86,6 +86,7 @@ function tmax_results = PP_nifti_max(options)
 % actual # of folders are x2 (odd entries are UNC, evens are FWE)
 
 denoising_descriptors = {'RP6', 'RP24', 'wavelet','rWLS', 'FD1','FD2','FD5','FD10', 'FD20', 'FD40', 'DV1', 'DV2', 'DV5', 'DV10', 'DV20', 'DV40' };
+% denoising_descriptors = {'RP6', '1C', '1M','1H', '5C','5M','5H','10C', '10M', '10H', '20C', '20M', '20H', '40C', '40M', '40H' };
 
 % unpack options struc
 

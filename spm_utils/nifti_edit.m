@@ -172,7 +172,7 @@ axis ij
 axis equal
 axis off
 set(gca,'Tag','axial');
-title('axial');
+title('plane-1');
 
 subplot(2,2,2);
 plot_data = squeeze(sum(nifti_data,3));
@@ -183,7 +183,7 @@ axis ij
 axis equal
 axis off
 set(gca,'tag','sagittal');
-title('sagittal');
+title('plane-2');
 
 subplot(2,2,3);
 plot_data = squeeze(sum(nifti_data,1));
@@ -194,7 +194,7 @@ axis ij
 axis equal;
 axis off
 set(gca,'tag','coronal');
-title('coronal');
+title('plane-3');
 
 subplot(2,2,4)
 axis off

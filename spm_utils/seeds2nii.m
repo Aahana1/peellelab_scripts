@@ -8,7 +8,8 @@ function [ errflag,errstring ] = seeds2nii(centers, radii, template_fname, nii_f
 %   centers         - 3xn XYZ defining seed centers. (NB: 3xn -- i.e. COLUMN WISE)
 %   radii           - nx1 seed radii, or a single value that will be applied to all
 %   template_fname  - template image to use (fullpath if not in working dir)
-%                     Ex: '/Applications/spm12/toolbox/OldNorm/T1.nii';
+%                     Ex:   '/Applications/spm12/toolbox/OldNorm/T1.nii';
+%                           '/Users/peellelab/OLF_SEEDS/atlas.nii'
 %   nii_fname       - fname of nii to create (saved in pwd if not fullpath)
 %                     (NB: if the file exists it will be overwritten)
 %
@@ -26,7 +27,10 @@ function [ errflag,errstring ] = seeds2nii(centers, radii, template_fname, nii_f
 % NOTES
 %
 % 1) ROI centers are assumed to be in template space
+%
 % 2) uses marsbar for voxel extraction
+%       addpath(genpath('/Users/peellelab/MATLAB_THIRDPARTY/marsbar'))
+%
 % 3) A voxel value > 1 is recommended when overlaying ROI on tmaps
 %    - see comments in overlay_nifti.m
 %

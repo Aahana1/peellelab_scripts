@@ -3,17 +3,26 @@ function [ errflag,errstring ] = BIDSify_metadata_fnames(METADATAdir, PL2BIDSID_
 
 % replace Peellelab SID in metadata filesnames with generic BIDS sub-xx identifiers
 %
-% run this AFTER counterbalance_metadata_fnames (because counterbalance file uses PLID
+% NB: run this AFTER counterbalance_metadata_fnames (because counterbalance file uses PLID
 % (which will no longer work if you swap out the PLID for BIDS ID in the fnames!)
+%
+% usage:
+%
+% [ errflag,errstring ] = BIDSify_metadata_fnames(METADATAdir, PL2BIDSID_fname)
 %
 % INPUT
 %
-% metadata_dir - directory containing all the .csv metadata files to rename
+% metadata_dir - directory containing the .csv metadata files to rename
 %
 % PL2BIDSID_fname - fname containing Pellelab to BIDS ID table. Format:
 %
 %     PL00016,sub-01
 %     PL00026,sub-02    etc...
+%
+% HISTORY
+%
+% 12/2019 [MSJ] minor cleanup
+% 09/2019 [MSJ] - new
 %
 
 
@@ -85,8 +94,6 @@ for index = 1:size(csv_masterlist,1)-1   % "split" adds a blank line ergo "-1"
     new_name = strrep(old_name, PLID, BIDSID);
     new_fname = fullfile(p,[new_name e]);
 
-    fprintf('Renaming \t %s\nto \t\t %s\n\n', fname, new_fname);    
-
 end
 
 % now actually rename the files if we get to here w/o crashing
@@ -106,10 +113,19 @@ for index = 1:size(csv_masterlist,1)-1   % "split" adds a blank line ergo "-1"
 
     [ SUCCESS,MESSAGE,~ ] = movefile(fname, new_fname);
 
-    if (SUCCESS ~= 1)
-        fprintf('Move of %s to %s failed. (%s). Continuing...\n', old_name, new_name, MESSAGE);
-        errflag = 1;
-        errstring = 'Some files not renamed';
+    % sanity check: movefile won't copy a file onto itself
+    % -- if true, doing nothing is the correct move
+    
+    if ~strcmp(fname,new_fname)
+        
+        if (SUCCESS ~= 1)
+            fprintf('Move of %s to %s failed. (%s). Continuing...\n', old_name, new_name, MESSAGE);
+            errflag = 1;
+            errstring = 'Some files not renamed';
+        else
+            fprintf('Renaming \t %s\nto \t\t %s\n\n', fname, new_fname);    
+        end
+    
     end
 
 end

@@ -6,19 +6,26 @@ function [ errflag,errstring ] = counterbalance_metadata_fnames(METADATAdir, new
 % (after add_subjects_and_sessions we can ignore CB as long as we fix
 % the metadata fnames)
 %
-% run this before BIDSify_metadata_fnames (because we need the PLID in the
-% filename to lookup the counterbalancing)
+% usage:
+%
+% [ errflag,errstring ] = counterbalance_metadata_fnames(METADATAdir, new_session_names, CB_fname)
+%
+% NB: run this *BEFORE* BIDSify_metadata_fnames (because we need the PLID 
+% in the filename to lookup the counterbalancing)
 %
 % INPUT
 %
-% metadata_dir - directory containing all the .csv metadata files to rename
+% METADATAdir - fullpath to directory containing the peellelab .csv metadata files to rename
 %
-% new_session_names -- the new, (presumably) more meaningful, session labels
+% new_session_names -- the new, (presumably) more meaningful, session names
 % presented in null counterbalance order. This can be a cell or a fullpath
 % to an session label auxfile. Cell example:
 %
 %   new_session_names = { 'LISTEN01', 'REPEAT01', 'LISTEN02', 'REPEAT02' }
 %
+% note the session names in the metadata files should be 'SESS01',
+% 'SESS02', 'SESS03', etc as collected in chronological order. These
+% are what we rename using 'new_session_names'
 %
 % OPTIONAL
 %
@@ -29,22 +36,16 @@ function [ errflag,errstring ] = counterbalance_metadata_fnames(METADATAdir, new
 %     PL00027,2,1,4,3
 %     PL00029,2,1,4,3 etc.
 %
-% if no CB file is provided, we 1:1 map the old session names to the 
-% new session names
+% if no CB file is provided, we don't reshuffle the metadata files 
+% (but they will get renamed using 'new_session'names')
 %
-% ALSO USES
-%
-% SESSION_NAMES_IN_SCAN_ORDER are generic peellab session names that are
-% used in metadata naming in order in which the stimulus were presented in 
-% the scanner. We assume these are SESS01,etc:
-%
-%   SESSION_NAMES_IN_SCAN_ORDER = { 'SESS01' 'SESS02' 'SESS03' ... }
-%
-% (this variable is local global bc make_counterbalance_lookup_table
-%  needs it)
+% sanity check: if new_session_names are the orignal session names
+% ('SESS01','SESS02',etc) and there is no counterbalancing, calling
+% this function on your metadata should have no effect.
 %
 % HISTORY
 %
+% 12/2019 [MSJ] - minor cleanup
 % 09/2019 [MSJ] - new
 %
 
@@ -76,7 +77,6 @@ errflag = 0;
 %--------------------------------------------------------------------------
 % session renaming init
 %--------------------------------------------------------------------------
-
 
 if (~iscell(new_session_names))
 
@@ -125,9 +125,6 @@ if (~isempty(CB_fname))
     fprintf('Using counterbalancing file: %s\n', CB_fname);
     CBLUT = make_counterbalance_lookup_table(CB_fname);
 end
-
-
-
 
 
 %--------------------------------------------------------------------------
@@ -197,16 +194,22 @@ for index = 1:size(csv_masterlist,1)-1   % "split" adds a blank line ergo "-1"
     new_name = strrep(old_name, SESSNAME, new_SESSNAME);
     new_fname = fullfile(p,[new_name e]);
     
-    [ SUCCESS,MESSAGE,~ ] = movefile(fname, new_fname);
+    % sanity check: movefile won't copy a file onto itself
+    % -- if true, doing nothing is the correct move
+    
+    if ~strcmp(fname,new_fname)
+        
+        [ SUCCESS,MESSAGE,~ ] = movefile(fname, new_fname);
 
-    if (SUCCESS ~= 1)
-        fprintf('Move of %s to %s failed. (%s). Continuing...\n', old_name, new_name, MESSAGE);
-        errflag = 1;
-        errstring = 'Some files not renamed';
+        if (SUCCESS ~= 1)
+            fprintf('Move of %s to %s failed. (%s). Continuing...\n', old_name, new_name, MESSAGE);
+            errflag = 1;
+            errstring = 'Some files not renamed';
+        end
+    
     end
 
 end
-
 
 
 

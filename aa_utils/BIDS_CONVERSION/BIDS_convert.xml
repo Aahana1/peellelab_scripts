@@ -18,6 +18,9 @@
 
             <module><name>aamod_get_dicom_structural</name></module>  		   
             <module><name>aamod_convert_structural</name></module>
+            <module><name>aamod_reorienttomiddle_structural</name></module>
+             
+            
             <module><name>aamod_biascorrect_structural</name></module>
             <module><name>aamod_freesurfer_deface</name></module>
 
@@ -25,20 +28,32 @@
 
             <module><name>aamod_get_dicom_t2</name></module>  		   
             <module><name>aamod_convert_t2</name></module>
+            <module><name>aamod_reorienttomiddle_t2</name></module>
             <module><name>aamod_biascorrect_t2</name></module>
             <module><name>aamod_freesurfer_deface_apply_t2</name></module>
             
             <!-- functional dicom => nifti conversion -->
 
             <module><name>aamod_get_dicom_epi</name></module>  		   
+            <!--<module><name>aamod_convert_epi</name></module>-->
             <module><name>aamod_convert_epis</name></module>
+            <module><name>aamod_reorienttomiddle_epi</name></module>
 
             <!-- we need aamod_firstlevel_model in the pipeline so we can do addevents in -->
             <!-- the userscript but we don't want to actually run it (because that would -->
             <!-- require running a complete preprocessing pipeline. Ergo aamod_halt -->
 
+
             <module><name>aamod_halt</name></module>
             <module><name>aamod_firstlevel_model</name></module>
+   
+
+            <!-- if we include a_f_c (even though we're not going to run it) -->
+            <!-- we don't have to maintain 2 model file (one with contrasts and one without) -->
+
+            <!--
+            <module><name>aamod_firstlevel_contrasts</name></module>
+            -->
                         
 	</main>
 		

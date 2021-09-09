@@ -1,0 +1,572 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica-Oblique;\f2\fswiss\fcharset0 Helvetica;
+\f3\fmodern\fcharset0 Courier;\f4\fmodern\fcharset0 Courier-Bold;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww27180\viewh21360\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc\partightenfactor0
+
+\f0\b\fs34 \cf0 CNDA to BIDS Overview\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i\b0 \cf0 Overview
+\f0\i0\b \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 The following documents how to convert CNDA imaging data and Peelle lab metadata to BIDS format, and then use\
+that data in for analysis. Briefly, the steps are: 1) create datastamp, counterbalancing, aliased subject ID, session\
+names and model definition plain text files, 2) use provided utilities to rename Peelle lab Excel metadata files to conform to \
+BIDS, 3) run a minimal analysis that aa can use to generate the BIDS version of the data, 4) run export_toBIDS, 5) replace \
+the minimal tsv events files created during export with the original Pellelab metadata using a provided utility.\
+\
+Your data is then ready for analysis and/or sharing.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\
+Required Auxiliary Files\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 Define the following five plaintext files (pro-tip: put in a folder "auxdata" that lives in the top level of the project data)\
+\
+\
+1) \ul Datastamp\ulnone  \
+\
+A list of CNDA subject ID (SID) and file numbers to include in the analysis.\
+\
+Format:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	CNDASUBJECTID CNDASESSIONID T1 	[T2] [EPI1 EPI2 ... ]
+\f2 \
+\
+Example:\
+\
+
+\f3 	PL00016 04 11 13 18 20 22 24\
+	PL00026 02 7 9 18 20 22 24\
+	PL00027 02 7 9 14 16 18 20\
+	PL00029 02 7 9 18 20 22 24		etc...
+\f2 \
+\
+\
+Footnotes:\
+\
+i. The datastamp is the only auxfile that is 
+\f0\b space-separated
+\f2\b0  (the others are 
+\f0\b comma separated
+\f2\b0 ).\
+This is because comma-separated files don't play nice with shell scripts and we pass the datastamp\
+to a shell script to automatically download data from CNDA (in addition to using it in aa to define\
+subjects in the analysis)\
+\
+ii. The datastamp is "in control" of the analysis. For example, you may want to run a subset\
+or even just one subject (to test the pipeline, etc). Create and use a datastamp with only the\
+subjects to run. Entries in the other four auxfiles referring to other SID will be ignored.\
+\
+iii. The name of the datastamp (and any of the auxfiles) can be anything; the extension must be txt.\
+\
+iv. The number of entries in the datastamp depend on the nature of the data and analysis. For example, \
+you might not include a T2, and you will likely have a different number of epi files. However, there \
+must be the same number of entris for each subject.\
+\
+v. CNDA download creates folders named "resources" in the directory tree. Unfortunately, current versions of\
+Matlab's 
+\f3 genpath() 
+\f2 (which aa uses to crawl the tree) ignores directories with this name. As such,\
+you must rename them. Run the following command in a terminal window after changing your working\
+directory to the top level of the data download:\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3 \cf0 	find . -depth -name resources -execdir mv \{\} dicom_files \\;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 \
+\
+\
+2) \ul Counterbalance file\ulnone \
+\
+A comma-separated plaintext file listing the counterbalance order for each subject. \
+\
+Format:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	PLID,session-index,session-index,...
+\f2 \
+\
+Example:\
+\
+
+\f3 	PL00016,1,2,3,4\
+	PL00026,2,1,4,3\
+	PL00027,2,1,4,3	etc...
+\f2 \
+\
+\
+Footnotes:\
+\
+i. The SID in the counterbalance file are always CNDA style.\
+\
+ii. For consistency, you must provide the counterbalancing file even if your experiment does\
+not include counterbalancing. Simply provide an unshuffled session list for each subject:\
+\
+
+\f3 	PL00016,1,2,3,4\
+	PL00026,1,2,3,4\
+	PL00027,1,2,3,4	etc...\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 \
+\
+3) \ul Alias file\ulnone \
+\
+A comma-separated plaintext file listing an alias to be used in place of each Peellelab SID. Format:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	SID,ALIAS
+\f2 \
+\
+Example\
+\
+
+\f3 	PL00016,sub-01\
+	PL00026,sub-02\
+	PL00027,sub-03		etc...
+\f2 \
+\
+\
+Footnotes:\
+\
+i. The alias file is typically used to generate generic BIDS IDs in preparation for BIDS conversion (as\
+in this example). However, you may supply any alias desired (as long as no subject is assigned\
+the same alias). If you wish to use the original SID, provide an alias file like the following:\
+\
+
+\f3 	PL00016,PL00016\
+	PL00026,PL00026\
+	PL00027,PL00027		etc...
+\f2 \
+\
+\
+4) \ul Session labels\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \ulnone A plain text file specifying a label for each of the epi sessions defined in the datastamp. One per line.\
+\
+Example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	LISTEN01\
+	REPEAT01\
+	LISTEN02\
+	REPEAT02\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 \
+\
+5) \ul Model Specification\ulnone \
+\
+A plaintext file specifying the modeling parameters, including the metadata directory, timebase, contrasts,\
+and other necessary modeling information. See "help parse_model_file" for more information.\
+\
+Example:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	description = 'NAMWords1 analysis'\
+	metadata_directory = '/Users/peellelab/DATA/NAMWORDS/METADATA_W_SEMANTIC_MEASURES/134_test'\
+	forceZeroDuration = 'true'\
+	timebase = 1000\
+	columnOrder = \{ 2,3,4 \}\
+	excludedEvents = \{ 'NULL'\}\
+	addUnaryContrasts = 'true'\
+	contrasts.defs = \{  '+1xLISTENWORD|-1xLISTENNOISE' , '+1xREPEATCORRECT|-1xREPEATNOISE' \} \
+	contrasts.sessions = \{ 'sessions:LISTEN01+LISTEN02' , 'sessions:REPEAT01+REPEAT02' \}\
+	contrasts.names = \{ 'listenword_G_listennoise' , 'repeatword_G_repeatnoise' \}\
+	parametric_modulator.names = \{ 'density', 'frequency' \};\
+	parametric_modulator.metadata_columns = \{ 8,11 \};
+\f2 \
+\
+Footnotes:\
+\
+i. Remember to modify the HFR timing in the userscript when using sparse sampling:\
+\
+
+\f3 	aap.tasksettings.aamod_firstlevel_model.xBF.T0 = 1; \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\
+Prepping for Analysis\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i\b0 \cf0 Step-1: Metadata filename modification
+\f2\i0 \
+\
+Run these two scripts, 
+\f1\i in the following order:
+\f2\i0 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	counterbalance_metadata_fnames(metadata_dir, session_label_fnames, counterbalance_fname)\
+	BIDSify_metadata_fnames(metadata_dir, alias_fname)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2 \cf0 \ul \ulc0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \ulnone Inputs:\
+\
+	
+\f3 metadata_dir
+\f2  - fullpath to the directory where the metadata (Excel .csv files) live\
+
+\f3 	session_label_fnames 
+\f2 - fullpath to session name file described above\
+
+\f3 	counterbalance_fname 
+\f2 - fullpath to counterbalance file described above (can use 
+\f3 []
+\f2  if none)\
+
+\f3 	alias_fname 
+\f2 - fullpath to subject ID alias file described above\
+\
+Each script will prompt before running (because of the potential for dataloss). Enter (uppercase) Y to proceed, or \
+any other key to abort. Upon completion, the metadata filenames will reflect counterbalancing and SID aliasing\
+used in the subsequent analysis.\
+\
+Footnotes:\
+\
+i. The metadata directory should only contain metadata for subjects who appear in the datastamp.\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i \cf0 Step-2: BIDS conversion
+\f2\i0 \
+\
+A minimal analysis is required to generate just enough information to allow 
+\f3 aa_export_toBIDS
+\f2  to convert the\
+results to BIDS format (the full analysis is done using the converted data as input -- see below). This requires \
+DICOM input and conversion, defacing (if intending to upload the results to a public site such as OpenNeuro),\
+and a model specification. However, because the actual modeling is not performed (see next step), a complete\
+preprocessing pipeline (including time-consuming steps such as segmentation, normalization, etc)  is not necessary.\
+\
+A userscript and tasklist for this step is shown in the appendix (note the userscript here makes use of the auxfiles\
+created above). The module (aamod_halt) is included in the tasklist to terminate the analysis before firstlevelmodel\
+runs (see previous comment).\
+\
+Once the analysis is complete, run 
+\f3 aa_export_toBIDS
+\f2  to do the conversion. Note you need to specify the defaced \
+structural images explicitly (you also need to reload aap_parameters.mat in the results directory as this includes auxiliary \
+aap fields not generated until the "conversion" analysis exits. Use the following code as a template:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3 \cf0 	cd(fullfile(aap.acq_details.root,aap.directory_conventions.analysisid));\
+	clear aap; load('aap_parameters');\
+	aa_export_toBIDS('/Path/to/BIDS/converted/datatree/to/be/created',...\
+                    'anatt1','aamod_freesurfer_deface_00001|defaced_structural',...\
+                        'anatt2','aamod_freesurfer_deface_apply_t2_00001|defaced_t2')\
+
+\f2 \
+\
+Footnotes\
+\
+i) BIDS requires three files to appear in the top level directory:\
+\
+		
+\f3 README
+\f2  - a plaintext (ASCII or UTF-8) description of the data\
+		
+\f3 CHANGES
+\f2 - a plaintext (ASCII or UTF-8) list of version changes\
+		
+\f3 dataset_description.json
+\f2  - a JSON description of the data (see the current BIDS specs for fields)\
+\
+You must provide these files to be BIDS-compliant. 
+\f3 aa_export_toBIDS
+\f2  will attempt to copy them from\
+
+\f3 aap.directory_conventions.BIDSfiles
+\f2 , if the field is defined and the directory exists. Otherwise you'll \
+have to add them by hand). Note there are a number of optional files that can be included at the top level\
+-- for convenience, all files that live in aap.directory_convention.BIDSfiles will be copied for you (if you set \
+
+\f3 aap.directory_conventions.BIDSfiles
+\f2 , the directory must ONLY contain BIDS files (because \
+
+\f3 aa_export_toBIDS
+\f2  blindly copies the entire directory contents to the destination folder). So it can't be\
+the analysis results directory (which would have been the logical choice).\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\i \cf0 Step-3: BIDS .tsv file modification
+\f0\i0\b \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f3\b0 \cf0 aa_export_toBIDS
+\f2  writes minimal information to the .tsv "events" files saved in the BIDS-converted directory tree.\
+Although this conforms to the BIDS standard, it is permissible (and desirable) to store additional information in these files,\
+including such modeling features as parametric modulators or alternative event descriptors. As such, the final preparatory\
+step is replacing all of the event.tsv files in the BIDS directory with the contents of the original Peellelab metadata. To do\
+so, run the following utility:\
+
+\f3 \
+	[ errflag,errstring ] = BIDS_TSV_slam(BIDSdir, METADATAdir)\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 The inputs 
+\f3 BIDSdir
+\f2  and 
+\f3 METADATAdir 
+\f2 are fullpaths to the top-level BIDS directory tree (created by 
+\f3 aa_export_toBIDS
+\f2 )\
+and the directory containing the (name-corrected!)* Peellelab Excel .csv metatdata files (* see Step-1).\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 The utility returns an error flag and descriptor; these should indicate no-error if tsv modification completed normally.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 You now have your data in anonymized, BIDS-compliant format that can be uploaded to OpenNeuro. \
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 \
+Running the analysis of interest\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 \
+The motivation for the above steps is to run our analysis using the BIDS data (i.e., instead of the CNDA download) so to\
+simplify replicability of any reported results. However, a weakness of the current BIDS standard is an inflexible modeling\
+specification. As such, it is likely you will use our in-house modeling tools rather than the modeling functionality \
+aa BIDS import provides. This is a two-step process:\
+\
+	1) inform 
+\f3 aas_processBIDS
+\f2  to omit modeling when importing the BIDS data\
+	2) specify the model in the userscript using our in-house tools\
+\
+Set 
+\f3 omitBIDSmodeling
+\f2  to 
+\f3 true
+\f2  in the 
+\f3 acq_details
+\f2  field of the 
+\f3 aap
+\f2  struct (
+\f3 aap.acq_details.omitBIDSmodeling = true
+\f2 ) \
+before calling 
+\f3 aas_processBIDS
+\f2 . You then use 
+\f3 make_model
+\f2  to define the model. The utility requires a list of SID and session names. \
+Use the following code snippet as a template:\
+\
+
+\f3 	fname = '/Path/to/BIDS/toplevel/participants.tsv';\
+	temp = readtable(fname,'FileType','text','Delimiter','\\t');\
+	SUBJECTS = temp\{:,1\}; \
+	SESSIONS = importdata(session_labels_fname);\
+	aap = make_model(aap, SUBJECTS, SESSIONS, model_description_fname);\
+\
+
+\f2 where 
+\f3 model_description_fname
+\f2  and 
+\f3 sessions_fname 
+\f2 are fullpaths to the model definition and session name files, \
+as defined earlier.\
+\
+Finally, you should change the 
+\f3 metadata_directory
+\f2  in the model file to point at the top level BIDS directory to\
+allow them to locate the tsv event files (our modeling tools can use either Peellelab .csv or BIDS .tsv files, but\
+best practice is to use the .tsv files in the BIDS distribution because that is the modeling information that will be \
+shared when the data is made publically available.\
+\
+The 
+\f3 columnOrder
+\f2  entry for Peelle lab csv is different than that used in BIDS .tsv files ( 
+\f3 \{2,3,4\}
+\f2  and\
+
+\f3 \{1,4,2\},
+\f2  respectively). You may either update the model file to reflect this or simply omit the field and\
+the modeling tools will use an appropriate column order based on the file's extension.\
+\
+If you use parametric modulators or other data beyond the standard BIDS modeling data, check the\
+entries you specify in 
+\f3 parametric_modulator.metadata_columns
+\f2   carefully -- these may or \
+may not be different in Peelle lab and BIDS metadata files and cannot be determined by file extension.\
+\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b \cf0 Appendix A - Userscript and Tasklist for Minimal Pre-BIDS-conversion analysis\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 \
+
+\f3 \
+% -------------------------------------------------------------------------\
+% INITIALIZATION\
+% -------------------------------------------------------------------------\
+\
+clear all;\
+cd('~');   % workaround for an aa restart bug\
+aa_ver5;\
+\
+aap = aarecipe('aap_parameters_WUSTL.xml', 'BIDS_convert.xml');\
+\
+% -------------------------------------------------------------------------\
+% directory specs -- customize for your analysis\
+% -------------------------------------------------------------------------\
+\
+aap.acq_details.root = '/Users/peellelab/DATA/NAMWORDS';\
+aap.directory_conventions.analysisid = 'RESULTS_BIDSCONVERSION';\
+\
+aap.directory_conventions.rawdatadir = '/Users/peellelab/DATA/NAMWORDS/SUBJECTS';\
+\
+% this is where aa will look for required BIDS files\
+% note this is relative (i.e. under) aap.acq_details.root\
+\
+aap.directory_conventions.BIDSfiles = 'BIDSFILES';\
+\
+% -------------------------------------------------------------------------\
+% autoidentify -- T1 is required, T2 is optional\
+% -------------------------------------------------------------------------\
+\
+% protocol for t1 (dicom.ProtocolName) is T1w_MPR\
+%  protocol for t2 (dicom.ProtocolName) is T2w_SPC\
+\
+aap.options.autoidentifystructural = 1;\
+aap.directory_conventions.protocol_structural = 'T1w_MPR';\
+aap.options.autoidentifystructural_choosefirst = 1;\
+aap.options.autoidentifystructural_chooselast = 0;\
+\
+aap.options.autoidentifyt2 = 1;\
+aap.directory_conventions.protocol_t2 = 'T2w_SPC';\
+aap.options.autoidentifyt2_choosefirst = 1;\
+aap.options.autoidentifyt2_chooselast = 0;\
+\
+aap.tasksettings.aamod_firstlevel_model.xBF.T0 = 1; % for sparse sampling\
+\
+% -------------------------------------------------------------------------\
+% add subjects, sessions, and model -- customize for your analysis\
+% -------------------------------------------------------------------------\
+\
+datastamp_fname = '/Users/peellelab/DATA/NAMWORDS/auxdata/NAM_datastamp.txt'; \
+CB_fname = '/Users/peellelab/DATA/NAMWORDS/auxdata/NAM_counterbalance.txt'; \
+SID_alias_fname = '/Users/peellelab/DATA/NAMWORDS/auxdata/NAM_BIDSalias.txt'; \
+session_labels_fname = '/Users/peellelab/DATA/NAMWORDS/auxdata/NAM_session_labels.txt';\
+\
+[ aap,SUBJECTS,SESSIONS ] = add_subjects_and_sessions(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname);\
+\
+% model_fname should not define contrasts and set addUnaryContrasts = 'false'\
+\
+model_fname = '/Users/peellelab/DATA/NAMWORDS/auxdata/NAM_model.txt';\
+aap = make_model(aap, SUBJECTS, SESSIONS, model_fname);\
+\
+aa_doprocessing(aap);\
+aa_close(aap);\
+
+\f2 \
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f4\b \cf0 BIDS_convert.xml\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f2\b0 \cf0 \
+\
+
+\f3 <?xml version="1.0" encoding="utf-8"?>\
+<aap>\
+    <tasklist>\
+				\
+        <initialisation>\
+            <module><name>aamod_study_init</name></module>\
+        </initialisation>\
+		\
+        <main>\
+			\
+            <!-- minimal pipeline that allows conversion of our CNDA -->\
+            <!-- dicom & aa-based modeling to BIDS using aa_export_toBIDS -->\
+\
+            <module><name>aamod_autoidentifyseries_timtrio</name></module>\
+\
+            <!-- structural dicom => nifti conversion and defacing -->\
+            <!-- always biascorrect if you're defacing! -->\
+\
+            <module><name>aamod_get_dicom_structural</name></module>  		   \
+            <module><name>aamod_convert_structural</name></module>\
+            <module><name>aamod_biascorrect_structural</name></module>\
+            <module><name>aamod_freesurfer_deface</name></module>\
+\
+            <!-- if you do not include T2, comment this block -->\
+\
+            <module><name>aamod_get_dicom_t2</name></module>    \
+            <module><name>aamod_convert_t2</name></module>\
+            <module><name>aamod_biascorrect_t2</name></module>\
+            <module><name>aamod_freesurfer_deface_apply_t2</name></module>\
+            \
+            <module><name>aamod_get_dicom_epi</name></module>\
+            <module><name>aamod_convert_epis</name></module>\
+\
+            <!-- we need aamod_firstlevel_model in the pipeline so we can do addevents in -->\
+            <!-- the userscript but we don't want to actually run it (because that would -->\
+            <!-- require running a complete preprocessing pipeline. Ergo aamod_halt -->\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0             <!-- also by including aamod_firstlevel_contrasts, we can use the same -->\
+            <!-- model file for BIDS conversion as used in subsequent analysis -->\
+            <!-- (otherwise the model file would have to omit contrast definitions) -->\
+\
+            <module><name>aamod_halt</name></module>\
+            <module><name>aamod_firstlevel_model</name></module>\
+            <module><name>aamod_firstlevel_contrasts</name></module>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0                        \
+	</main>\
+		\
+	</tasklist>\
+</aap>\
+
+\f2 \
+\
+\
+}

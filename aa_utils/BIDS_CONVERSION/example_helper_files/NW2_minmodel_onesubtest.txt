@@ -1,0 +1,9 @@
+% = minimum model for BIDS conversion
+% = aside: model file comments must include an equals sign (go figure)
+
+description = 'NAMWords2 five condition analysis'
+metadata_directory = '/Volumes/DATA02/NAMWORDS2/METADATA/NW2_onesubtest'
+forceZeroDuration = 'true'
+timebase = 1000
+columnOrder = { 2,3,4 }
+excludedEvents = { 'NULL'}

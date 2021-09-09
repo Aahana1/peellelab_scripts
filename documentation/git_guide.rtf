@@ -8,9 +8,8 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\b\fs34 \cf0 A Minimal Introduction to Git\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b0 \cf0 \
+\f1\b0 \
 	
 \f2\i Git allows groups of people to work on the same documents (often code) at the same time, and without stepping \
 	on each other's toes. It's a distributed version control system. 
@@ -45,18 +44,16 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\b \cf0 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b0 \cf0 	We\'92ll introduce these commands one at a time, and also have some things to say about GitHub, the cloud storage \
+\f1\b0 	We\'92ll introduce these commands one at a time, and also have some things to say about GitHub, the cloud storage \
 	service that is typically used to host git-based projects. (Our focus here will be on 
 \f2\i git
 \f1\i0  the command line tool, not\
 	GitHub the website. The two are related but not the same thing.)\
 	\
 	First, let\'92s start with the basic command syntax.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 \
+\f0\b \
 	git Syntax\
 \
 	
@@ -574,8 +571,9 @@
 \
 	The syntax is as follows:\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f3 		$ git push <remote> <remote-branch>\
+\f3 \cf0 		$ git push <remote> <remote-branch>\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f1 \cf0 \
@@ -789,12 +787,10 @@
 \f2\i forking
 \f1\i0 .\
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 	Forking \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\f0\b 	Forking \
 
-\f1\b0 \cf0 \
+\f1\b0 \
 	The process of creating your own copy of someone else\'92s repository is called 
 \f2\i forking
 \f1\i0 . You fork a repository on GitHub \
@@ -890,14 +886,12 @@
 	in the origin." The qualifier is needed because the git defaults can be configured to do something else. It's\
 	probably best to always explicitly provide the remote and branch names when pushing.\
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 	Addendum: The 
+\f0\b 	Addendum: The 
 \f6\i merge
 \f0\i0  command\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b0 \cf0 \
+\f1\b0 \
 	The workflow model in this document has been that of cloning a remote (possibly forked) repository, making local\
 	changes, then pushing back to the origin and opening a pull request. As such, we have omitted a discussion of the\
 	
@@ -928,6 +922,7 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f1 \cf0 \
+0.\
 	Note the merge goes into the currently checked-out branch. Do a 
 \f3 git status
 \f1  or 
@@ -978,12 +973,10 @@
 	(e.g., branches may be missing in the branch pull-down menu). Always use a supported browser when iteracting\
 	with your (or any) repo.\
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 	Conclusion\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\f0\b 	Conclusion\
 
-\f1\b0 \cf0 \
+\f1\b0 \
 	Version control for distributed software development is a hard problem and git is not a perfect solution. However, \
 	thousands of developers currently use the tool. Furthermore, GitHub.com tries to make using git as painless as \
 	possible, offering free hosting of git repositories, an active developer community, and additional resources for\
@@ -993,12 +986,10 @@
 	You may even find your day-to-day git needs rarely, if ever, go beyond the commands and topics covered in this\
 	minimal introduction.\
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 	Recommended Reading\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\f0\b 	Recommended Reading\
 
-\f1\b0 \cf0 \
+\f1\b0 \
 	
 \f2\i Git For Humans
 \f1\i0 , by David Demaree (A Book Apart publications) is a readable introduction to git. The definitive\
@@ -1007,9 +998,8 @@
 \f1\i0 , written by Scott Chacon and Ben Straub (Apress) and is available on-line at git-scm.com.\
 \
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 	Appendix A \'97 Git Scenarios\
+\f0\b 	Appendix A \'97 Git Scenarios\
 \
 	
 \f1\b0 A brief list of tasks/tricks you may find useful if you work with git long enough.\
@@ -1052,8 +1042,7 @@
 	the upstream (see previous section on defining an upstream for your fork):\
 \
 		i) cd into your local repo of the fork\ul  and checkout the branch of the PR\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 \ulnone \
+\ulnone \
 		ii) Do:
 \f3  $ git pull upstream master\
 
@@ -1087,12 +1076,10 @@
 
 \f1\b0 		
 \f3 $ git diff\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\f0\b \
 
-\f1\b0 \cf0 	The output is Unix 
+\f1\b0 	The output is Unix 
 \f3 diff
 \f1  syntax and is not particularly easy to decypher.\
 \
@@ -1115,9 +1102,8 @@
 \f2\i\b0 Warning: Although some of the following operations can\
 	be undone, proceed asssuming they cannot. Make sure \
 	you are certain you want to lose your changes.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\i0\b \cf0 \
+\f0\i0\b \
 	
 \f1\b0 Discarding an edit depends on whether the file has been staged or not.\
 \
@@ -1132,9 +1118,8 @@
 \
 		
 \f3 $ git checkout [filename]\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1 \cf0 \
+\f1 \
 	Yes that's the same command you use to switch branches. No, it \
 	doesn't make any sense.\
 \
@@ -1223,9 +1208,8 @@
 	command was used.\
 \
 	You may now do a commit, or continue to make other changes in branch_one.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0  \
+\f0\b  \
 \
 	Appendix B \'97 Example git\
 \

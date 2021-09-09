@@ -1,8 +1,15 @@
 
-function [ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname)
+function [ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions_CB(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname)
                                                                                         
 
-% generate aas_addsubject and aas_addsession calls -- simplified version
+% generate aas_addsubject and aas_addsession calls
+%
+% this version includes counterbalancing -- use add_subjects_and_sessions
+% if you don't have counterbalancing
+%
+% USAGE
+%
+% [ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions_CB(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname)
 %
 % INPUT:
 %
@@ -100,7 +107,7 @@ function [ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions(aap, datasta
 %	i) If aap.options.autoidentifystructural == false, only T1 is added as a structural file
 %       If you want to use both T1 and T2, you must use autoidentifystructural.
 %
-%   ii) metadata files must be renamed to XXX.ALIAS.SESSIONLABEL.[YYY].cvs
+%   ii) for bids, metadata files must be renamed to XXX.ALIAS.SESSIONLABEL[isess].cvs
 %
 %       For example: NP1014_PL00123_SESS01.csv => NP1014_sub-01_LISTEN01.csv
 %
@@ -110,6 +117,7 @@ function [ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions(aap, datasta
 %
 % CHANGE HISTORY
 %
+%   12/2019 [MSJ] - minor cleanup
 %   09/2019 [MSJ] - new (scavenged from previous versions)
 %
 
@@ -120,7 +128,7 @@ aas_log(aap, false, sprintf('INFO: running %s', mfilename));
 %----------------------------------------------------------------------------------------------------------------
 
 if (nargin ~= 5)
-	aas_log(aap, true, 'Usage:[ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname)\n');
+	aas_log(aap, true, 'Usage:[ aap, SID_ADDED, SESS_ADDED ] = add_subjects_and_sessions_simple(aap, datastamp_fname, CB_fname, SID_alias_fname, session_labels_fname)\n');
 end
 
 

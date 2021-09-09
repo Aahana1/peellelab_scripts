@@ -1,30 +1,20 @@
-
-function aap = make_model(aap, subject_IDs, session_names, model_fname)
-
+function aap = make_minimum_model(aap, subject_IDs, session_names, model_fname)
 %
-% do addevents (and, optionally, addcontrasts) for AVI first-level model
+% make a minimum model for BIDS conversion (no contrasts, no parametric
+% modeling option)
 %
 % INPUT
 %
-%       aap                         - the aap struct
-%       subject_IDs                 - subjects to include in model (e.g., returned from add_subjects_and_sessions)
-%       session_names               - sessions to include in model (e.g., returned from add_subjects_and_sessions)
-%       model_fname                 - model file (fullpath). See parse_model_file.m for format
+%       aap             - the aap struct
+%       subject_IDs     - subjects to include in model (e.g., returned from add_subjects_and_sessions)
+%       session_names   - sessions to include in model (e.g., returned from add_subjects_and_sessions)
+%       model_fname     - model file (fullpath). See parse_model_file.m for format
 %
 % OUTPUT
 %
-%	aap - updated aap with events and (optionally) contrasts added
+%	aap - updated aap with events added
 %
 % NOTES
-%
-%   Metadata files are csv and should conform to the naming convention:
-%
-%		[wawa]_SID_SESSIONNAME_[wawa].csv
-%
-%   as long as the name includes the SID and session name it's fine
-%   (in the old style, we enforced rigid naming -- here just include the
-%   subject and session. You can always put different kinds of metadata
-%   (e.g. condition vs. item) in different .metadata_directories
 %
 %	Metadata file content is described in the parser.
 %
@@ -33,11 +23,16 @@ function aap = make_model(aap, subject_IDs, session_names, model_fname)
 %	text as a subscript, which looks weird but is otherwise harmless).
 %
 %   Additionally, event names are converted to UPPERCASE
-
+%
+% see AVI make model for recent changes that might be helpful to add here
+% (like providing a global event duration). Also, if the BIDS spec expands
+% to include contrasts, etc, we should expand this also
 %
 % HISTORY
 %
-%   09/2019 [MSJ] - new; simplifed from previous version
+% 09/2021 [MSJ] - new from make_model (stripped contrasts and paramod)
+% 01/2020 [MSJ] - added modelModules and contrastModules
+% 09/2019 [MSJ] - new; simplifed from previous version
 %
 
 aas_log(aap, false, sprintf('INFO: running %s', mfilename));
@@ -110,14 +105,14 @@ else
 end
 
 
-has_parametric_modulator = false;
+model_has_parametric_modulators = false;
 
-if (isfield(model,'parametric'))
+if (isfield(model,'parametric_modulator'))
     
     % process our simple passed struct into the weird struct array aas_addevent expects
         
-    if (isfield(model.parametric,'names'))
-        paranames = model.parametric.names;
+    if (isfield(model.parametric_modulator,'names'))
+        paranames = model.parametric_modulator.names;
         if ~iscell(paranames)
             aas_log(aap, true, sprintf('Parametric modulator names must be entered as a cell array. Exiting...\n'));
         end
@@ -125,31 +120,36 @@ if (isfield(model,'parametric'))
         aas_log(aap, true, sprintf('Parametric modulator missing name field. Exiting...\n'));
     end
     
-    nmod = numel(paranames);
+    nmodulators = numel(paranames);
     
-	if (isfield(model.parametric,'cols'))
-        parauxcols = model.parametric.cols;
-        if ~iscell(parauxcols)
-            aas_log(aap, true, sprintf('Parametric modulator columms must be entered as a cell array. Exiting...\n'));
+	if (isfield(model.parametric_modulator,'metadata_columns'))
+        paracols = model.parametric_modulator.metadata_columns;
+        if (length(paracols) ~= numel(paranames))
+            aas_log(aap, true, sprintf('You must specify a metadata columm for each modulator. Exiting...\n'));
         end
-    else
+	else
         aas_log(aap, true, sprintf('Parametric modulator missing column field. Exiting...\n'));
     end
   
-    if (isfield(model.parametric,'hs'))
-        parah = model.parametric.hs;
+    if (isfield(model.parametric_modulator,'hs'))
+        parah = model.parametric_modulator.hs;
         if ~iscell(parah)
             aas_log(aap, true, sprintf('Parametric modulator polynomial expansion must be entered as a cell array. Exiting...\n'));
         end
     else
-        parah = num2cell(ones(nmod,1));
+        parah = num2cell(ones(nmodulators,1));
     end
     
-    placeholder = cell(1,nmod);
-    
-    parametric = struct('name', paranames, 'P', placeholder, 'h', parah);
-    
-   has_parametric_modulator = true;
+    if (isfield(model.parametric_modulator,'targets'))
+        paratargets = model.parametric_modulator.targets;
+        if ~iscell(paratargets)
+            aas_log(aap, true, sprintf('Parametric modulator event targets must be entered as a cell array. Exiting...\n'));
+        end
+    else
+        aas_log(aap, true, sprintf('Parametric modulator missing event target field. Exiting...\n'));
+    end    
+        
+	model_has_parametric_modulators = true;
 
 end
 
@@ -199,9 +199,9 @@ fprintf(fid,'aamod_firstlevel_model options\n');
 fprintf(fid,'(this might not reflect tasklist customization)\n\n');
 
 for index = 1:numel(aap.tasksettings.aamod_firstlevel_model)
-	fprintf(fid,'=== aamod_firstlevel_model_000%d ===\n\n', index);
-	temp = aap.tasksettings.aamod_firstlevel_model(index);
-	print_aap(fid,temp);
+	fprintf(fid,'=== aamod_firstlevel_model_0000%d ===\n\n', index);
+	this_setting = aap.tasksettings.aamod_firstlevel_model(index);
+	print_aap(fid,this_setting);
 	fprintf(fid,'\n\n');
 end
 
@@ -253,7 +253,6 @@ metadata_fname_master_list = split(metadata_fname_master_list);
 % ------------------------------------------------------------------------------------------------------------------------------
 % ADDEVENT
 % ------------------------------------------------------------------------------------------------------------------------------
-
 
 fprintf(fid,'\n--- EVENTS ----\n\n');
 
@@ -319,10 +318,10 @@ for sindex = 1:numel(subject_IDs)
 
         % remove any events that are explicitly excluded (can be anything, but prolly at least includes NULL)
         % (be sure to convert model.excludedEvents to uppercase)
-
+        
         EVENTS_OF_INTEREST(ismember(EVENTS_OF_INTEREST,upper(model.excludedEvents)))= [];
 
-        % need to keep a record of the per-session events for contrast def
+        % need to keep a record of the per-session events for later contrast def
         %
         % notes:
         %
@@ -340,44 +339,52 @@ for sindex = 1:numel(subject_IDs)
         master_event_list = { master_event_list{:} EVENTS_OF_INTEREST{:} };
 
 		for eindex = 1:numel(EVENTS_OF_INTEREST)
+            
+            event_name = EVENTS_OF_INTEREST{eindex};
       			
-			temp = find(ismember(events,EVENTS_OF_INTEREST(eindex)));   % cellspeak for: temp = onsets(events==eindex);
+			rowselector = find(ismember(events,event_name));   % cellspeak for: rowselector = onsets(events==event_name);
 				
             if (model.forceZeroDuration)
                 durs = 0;
             else
-                durs = durations(temp) / model.timebase;
-            end
+                durs = durations(rowselector) / model.timebase;
+            end    
+                      
+            if (isfield(model,'modelModules'))
             
-            % note we wildcard to define for all firstlevel_model appearing
-            % in tasklist (think: branched analysis). This doesn't
-            % hurt anything if there *isn't* multiple occurences.
+                for mindex = 1:numel(model.modelModules) 
+ 
+                    aap = aas_addevent(aap, model.modelModules{mindex}, SID, SESSION_NAME, event_name, onsets(rowselector), durs);
+                    command_string = sprintf('aap = aas_addevent(aap, ''%s'', ''%s'', ''%s'', ''%s'', [%d onsets+durations]);', model.modelModules{mindex}, SID, SESSION_NAME, event_name, length(rowselector));                  
 
-             if (has_parametric_modulator)
-                
-                % copy data for this event into the modulator struct
-                
-                for mindex = 1:nmod
-                    parametric(mindex).P = auxdata{temp,parauxcols{mindex}};
+                    % log to logfile...
+                    %
+                    % (note we can't do eval(command_string) because command_string
+                    % isn't the literal command (we abridge the onsets and durs)
+
+                    fprintf('%s\n', command_string);
+                    fprintf(fid,'%s\n', command_string);
+
                 end
-                    
-                aap = aas_addevent(aap, 'aamod_firstlevel_model_*', SID, SESSION_NAME, EVENTS_OF_INTEREST{eindex}, onsets(temp), durs, parametric);   
-                command_string = sprintf('aap = aas_addevent(aap, ''aamod_firstlevel_model_*'', ''%s'', ''%s'', ''%s'', [%d onsets+durations+modulation]);', SID, SESSION_NAME, EVENTS_OF_INTEREST{eindex}, length(temp));
 
-             else
-                
-                aap = aas_addevent(aap, 'aamod_firstlevel_model_*', SID, SESSION_NAME, EVENTS_OF_INTEREST{eindex}, onsets(temp), durs);
-                command_string = sprintf('aap = aas_addevent(aap, ''aamod_firstlevel_model_*'', ''%s'', ''%s'', ''%s'', [%d onsets+durations]);', SID, SESSION_NAME, EVENTS_OF_INTEREST{eindex}, length(temp));
-                
-             end
+            else
+            
+                % default is to wildcard the call to addevent to so the addevent applies to for all firstlevel_model appearing
+                % in tasklist (think: branched analysis). This doesn't hurt anything if there *isn't* multiple occurences.
+
+                aap = aas_addevent(aap, 'aamod_firstlevel_model_*', SID, SESSION_NAME, event_name, onsets(rowselector), durs);
+                command_string = sprintf('aap = aas_addevent(aap, ''aamod_firstlevel_model_*'', ''%s'', ''%s'', ''%s'', [%d onsets+durations]);', SID, SESSION_NAME, event_name, length(rowselector));
+              
              
-            % log to logfile...
-            %
-            % (note we can't do eval(command_string) because command_string
-            % isn't the literal command (we abridge the onsets and durs)
-           
-            fprintf('%s\n', command_string);
-            fprintf(fid,'%s\n', command_string);
+                % log to logfile...
+                %
+                % (note we can't do eval(command_string) because command_string
+                % isn't the literal command (we abridge the onsets and durs)
+
+                fprintf('%s\n', command_string);
+                fprintf(fid,'%s\n', command_string);
+            
+            end
  
 		end
 					
@@ -385,171 +392,9 @@ for sindex = 1:numel(subject_IDs)
 	
 end
 
-
-% ------------------------------------------------------------------------------------------------------------------------------
-% 3) ADDCONTRAST
-% ------------------------------------------------------------------------------------------------------------------------------
-
-if ((model.addUnaryContrasts == false) && isempty(model.contrasts))
-    fclose(fid);
-    return;     
-end
-
-if ~isfield(aap.tasksettings,'aamod_firstlevel_contrasts')
-    fclose(fid);
-    aas_log(aap, true, sprintf('You must include aamod_firstlevel_contrasts in the tasklist to define contrasts. Exiting...'));
-end
-
-fprintf(fid,'\n--- CONTRASTS ----\n\n');
-
-fprintf(fid,'aamod_firstlevel_contrasts options\n');
-fprintf(fid,'(this might not reflect tasklist customization)\n\n');
-
-for index = 1:numel(aap.tasksettings.aamod_firstlevel_model)
-    fprintf(fid,'=== aamod_firstlevel_contrasts_000%d ===\n\n', index);
-    temp = aap.tasksettings.aamod_firstlevel_contrasts(index);
-    print_aap(fid,temp);
-    fprintf(fid,'\n\n');
-end
-
-    
-if (isfield(model,'contrasts') && ~isempty(model.contrasts))
-    
-	contrast_subject_selector = '*';
-    contrast_type = 'T';
-
-    for index = 1:length(model.contrasts.defs)
- 
-        % create a label based on the contrast def
-        
-% % %         contrast_label = model.contrasts.defs{index};
-% % %          
-% % %         % contrasts defs have syntax like '+1LISTENWORD|-1xLISTENNOISE'
-% % %         % need to swap out special characters to avoid filenaming weirdness
-% % %         
-% % %         contrast_label = strrep(contrast_label,'+','P');
-% % %         contrast_label = strrep(contrast_label,'-','M');
-% % %         contrast_label = strrep(contrast_label,'|','_O_');
-        
- % new - just have the user name the contrast...
- contrast_label = model.contrasts.names{index};
- 
-                
-        contrast_vector = model.contrasts.defs{index};
-        contrast_session_selector = model.contrasts.sessions{index};
- 
-        fprintf(fid,'\nUser-defined Contrast: %d\n', index);
-        fprintf(fid,' subject selector: %s\n', contrast_subject_selector);
-        fprintf(fid,' session selector: %s\n', contrast_session_selector);
-        fprintf(fid,' contrast type: %s\n', contrast_type);
-        fprintf(fid,' contrast label: %s\n', contrast_label);
-        fprintf(fid,' contrast vector: %s\n', contrast_vector);
-        fprintf(fid,'\n');
-        
-        fprintf('\nUser-defined Contrast: %d\n', index);
-        fprintf(' subject selector: %s\n', contrast_subject_selector);
-        fprintf(' session selector: %s\n', contrast_session_selector);
-        fprintf(' contrast type: %s\n', contrast_type);
-        fprintf(' contrast label: %s\n', contrast_label);
-        fprintf(' contrast vector: %s\n', contrast_vector);
-        fprintf('\n');
-
-
-        % include aamod_firstlevel_contrasts_* wildcard to handle multiple 
-        % occurences of module in tasklist (think: branched analysis)
-
- 
-        aap = aas_addcontrast(aap, ...
-                                'aamod_firstlevel_contrasts_*', ...
-                                    contrast_subject_selector, ...
-                                        contrast_session_selector, ...
-                                            contrast_vector, ...
-                                                contrast_label, ...
-                                                    contrast_type );
-
-
-    end
-    
-end
-
-
-
-if (model.addUnaryContrasts == true)
-
-    % add one contrast for each condition, in same order as events
-
-    master_event_list = unique(master_event_list);
-
-    contrast_subject_selector = '*';
-    contrast_type = 'T';
-
-    for index = 1:numel(master_event_list)
-
-        % contrast name is simply the event name
-
-        contrast_label = master_event_list{index};
-        contrast_vector = sprintf('+1x%s',contrast_label);
-
-        % identify which sessions this event appears in
-
-        contrast_session_selector = '';
-
-        for bindex = 1:length(session_names)
-            if (ismember(contrast_label, EVENTS_IN_THIS_SESSION{bindex}))
-                SESSION_NAME = session_names{bindex};
-                if (isempty(contrast_session_selector))
-                    contrast_session_selector = [ 'sessions:' SESSION_NAME];
-                else
-                    contrast_session_selector = [ contrast_session_selector '+' SESSION_NAME ];
-                end
-            end
-        end
-        
-        % CHECK -- if contrast appears in only one session, do we need to
-        % change to singlesession:wawa not sessions:wawa?
-        %
-        % UPDATE: either works
-
-        fprintf(fid,'\nUnary Contrast: %d\n', index);
-        fprintf(fid,' subject selector: %s\n', contrast_subject_selector);
-        fprintf(fid,' session selector: %s\n', contrast_session_selector);
-        fprintf(fid,' contrast type: %s\n', contrast_type);
-        fprintf(fid,' contrast label: %s\n', [ 'C_' contrast_label]);
-        fprintf(fid,' contrast vector: %s\n', contrast_vector);
-        fprintf(fid,'\n');
-
-        fprintf('\nUnary Contrast: %d\n', index);
-        fprintf(' subject selector: %s\n', contrast_subject_selector);
-        fprintf(' session selector: %s\n', contrast_session_selector);
-        fprintf(' contrast type: %s\n', contrast_type);
-        fprintf(' contrast label: %s\n', [ 'C_' contrast_label]);
-        fprintf(' contrast vector: %s\n', contrast_vector);
-        fprintf('\n\n');
-
-        % include aamod_firstlevel_contrasts_* wildcard to handle multiple 
-        % occurences of module in tasklist (think: branched analysis)
-
-        % adding a "C_' prefix to unary contrast label helps differentiate
-        % it from event name in diagnostic plots, etc
-
-        aap = aas_addcontrast(aap, ...
-                                'aamod_firstlevel_contrasts_*', ...
-                                    contrast_subject_selector, ...
-                                        contrast_session_selector, ...
-                                            contrast_vector, ...
-                                                [ 'C_' contrast_label ], ...
-                                                    contrast_type);
-
-    end
-
-
-
-end
-
+% done
 
 fclose(fid);
-return;
-
 
 end
 
